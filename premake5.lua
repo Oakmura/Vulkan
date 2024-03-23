@@ -76,13 +76,13 @@ group ""
             symbols "on"
 
         filter "configurations:Release"
-            defines "RELEASE"
+            defines { "RELEASE", "NDEBUG" }
             runtime "Release"
             optimize "on"
             symbols "off"
 
         filter "configurations:Distribution"
-            defines "DIST"
+            defines { "DIST", "NDEBUG" }
             runtime "Release"
             optimize "full"
             symbols "off"
