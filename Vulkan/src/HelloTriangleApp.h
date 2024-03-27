@@ -6,10 +6,11 @@
 struct QueueFamilyIndices 
 {
     std::optional<uint32_t> GraphicsFamily;
+    std::optional<uint32_t> PresentFamily;
 
     bool IsComplete() 
     {
-        return GraphicsFamily.has_value();
+        return GraphicsFamily.has_value() && PresentFamily.has_value();
     }
 };
 
@@ -42,6 +43,8 @@ private:
 
     void createLogicalDevice();
 
+    void createSurface();
+
 
     void mainLoop();
 
@@ -55,9 +58,11 @@ private:
     GLFWwindow *mpWindow;
     VkInstance mInstance;
     VkDebugUtilsMessengerEXT mDebugMessenger;
+    VkSurfaceKHR mSurface;
 
     VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
     VkDevice mLogicalDevice;
     VkQueue mGraphicsQueue;
+    VkQueue mPresentQueue;
 };
 
