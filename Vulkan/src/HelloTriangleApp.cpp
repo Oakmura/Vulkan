@@ -270,7 +270,43 @@ QueueFamilyIndices HelloTriangleApp::findQueueFamilies(VkPhysicalDevice device)
 
 void HelloTriangleApp::createLogicalDevice()
 {
+    QueueFamilyIndices indices = findQueueFamilies(mPhysicalDevice);
 
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = indices.GraphicsFamily.value();
+    queueCreateInfo.queueCount = 1;
+
+    float queuePriority = 1.0f;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.queueCreateInfoCount = 1;
+
+    createInfo.pEnabledFeatures = &deviceFeatures;
+
+    // for compatibility with older implementations. Not strictly necessary
+    createInfo.enabledExtensionCount = 0;
+    if (sEnableValidationLayers) 
+    {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(mRequiredValidationLayers.size());
+        createInfo.ppEnabledLayerNames = mRequiredValidationLayers.data();
+    }
+    else 
+    {
+        createInfo.enabledLayerCount = 0;
+    }
+
+    if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mLogicalDevice) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to create logical device!");
+    }
+
+    vkGetDeviceQueue(mLogicalDevice, indices.GraphicsFamily.value(), 0, &mGraphicsQueue); // (QueuCreateInfo.queueCount == 1 -> queueIndex == 0)
 }
 
 void HelloTriangleApp::mainLoop() 
@@ -283,6 +319,8 @@ void HelloTriangleApp::mainLoop()
 
 void HelloTriangleApp::cleanup() 
 {
+    vkDestroyDevice(mLogicalDevice, nullptr);
+
     if (sEnableValidationLayers) 
     {
         DestroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
