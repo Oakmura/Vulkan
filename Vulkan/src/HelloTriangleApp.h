@@ -14,6 +14,13 @@ struct QueueFamilyIndices
     }
 };
 
+struct SwapChainSupportDetails 
+{
+    VkSurfaceCapabilitiesKHR Capabilities;
+    std::vector<VkSurfaceFormatKHR> Formats;
+    std::vector<VkPresentModeKHR> PresentModes;
+};
+
 class HelloTriangleApp final
 {
 public:
@@ -37,13 +44,20 @@ private:
     void setupDebugMessenger();
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
+    void createSurface();
+
     void pickPhysicalDevice();
     bool isDeviceSuitable(VkPhysicalDevice device);
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
     void createLogicalDevice();
 
-    void createSurface();
+    void createSwapChain();
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
 
     void mainLoop();
@@ -53,6 +67,7 @@ private:
 private:
     enum { WIDTH = 800, HEIGHT = 600 };
 
+    const std::vector<const char*> mRequiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     const std::vector<const char*> mRequiredValidationLayers = { "VK_LAYER_KHRONOS_validation" };
 
     GLFWwindow *mpWindow;
@@ -64,5 +79,10 @@ private:
     VkDevice mLogicalDevice;
     VkQueue mGraphicsQueue;
     VkQueue mPresentQueue;
+
+    VkSwapchainKHR mSwapChain;
+    std::vector<VkImage> mSwapChainImages;
+    VkFormat mSwapChainImageFormat;
+    VkExtent2D mSwapChainExtent;
 };
 
