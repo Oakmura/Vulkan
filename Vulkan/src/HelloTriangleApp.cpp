@@ -64,6 +64,7 @@ void HelloTriangleApp::initVulkan()
     createInstance();
     setupDebugMessenger();
     pickPhysicalDevice();
+    createLogicalDevice();
 }
 
 void HelloTriangleApp::createInstance() 
@@ -200,8 +201,6 @@ void HelloTriangleApp::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCre
 
 void HelloTriangleApp::pickPhysicalDevice()
 {
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
     if (deviceCount == 0) 
@@ -216,12 +215,12 @@ void HelloTriangleApp::pickPhysicalDevice()
     {
         if (isDeviceSuitable(device)) 
         {
-            physicalDevice = device;
+            mPhysicalDevice = device;
             break;
         }
     }
 
-    if (physicalDevice == VK_NULL_HANDLE) 
+    if (mPhysicalDevice == VK_NULL_HANDLE)
     {
         throw std::runtime_error("failed to find a suitable GPU!");
     }
@@ -237,7 +236,7 @@ bool HelloTriangleApp::isDeviceSuitable(VkPhysicalDevice device)
 
     QueueFamilyIndices indices = findQueueFamilies(device);
 
-    return indices.GraphicsFamily.IsComplete();
+    return indices.IsComplete();
 }
 
 QueueFamilyIndices HelloTriangleApp::findQueueFamilies(VkPhysicalDevice device)
@@ -265,8 +264,13 @@ QueueFamilyIndices HelloTriangleApp::findQueueFamilies(VkPhysicalDevice device)
 
         ++i;
     }
-
+        
     return indices;
+}
+
+void HelloTriangleApp::createLogicalDevice()
+{
+
 }
 
 void HelloTriangleApp::mainLoop() 

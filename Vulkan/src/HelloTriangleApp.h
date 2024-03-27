@@ -40,6 +40,9 @@ private:
     bool isDeviceSuitable(VkPhysicalDevice device);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
+    void createLogicalDevice();
+
+
     void mainLoop();
 
     void cleanup();
@@ -52,5 +55,7 @@ private:
     GLFWwindow *mpWindow;
     VkInstance mInstance;
     VkDebugUtilsMessengerEXT mDebugMessenger;
+
+    VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
 };
 
