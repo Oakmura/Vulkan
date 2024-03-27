@@ -89,5 +89,7 @@ private:
     VkExtent2D mSwapChainExtent;
     std::vector<VkImage> mSwapChainImages;
     std::vector<VkImageView> mSwapChainImageViews;
+
+    VkPipelineLayout mPipelineLayout;
 };
 
