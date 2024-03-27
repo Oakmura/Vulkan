@@ -12,7 +12,7 @@ public:
     HelloTriangleApp& operator=(const HelloTriangleApp &rhs) = delete;
 
 public:
-    void run();
+    void Run();
 
 private:
     void initWindow();
@@ -20,12 +20,23 @@ private:
     void initVulkan();
     void createInstance();
 
+    bool checkValidationSupport();
+    std::vector<const char*> getRequiredExtensions();
+
+    void setupDebugMessenger();
+    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
     void mainLoop();
 
     void cleanup();
 
 private:
-    GLFWwindow *mWindow;
+    enum { WIDTH = 800, HEIGHT = 600 };
+
+    const std::vector<const char*> mRequiredValidationLayers = { "VK_LAYER_KHRONOS_validation" };
+
+    GLFWwindow *mpWindow;
     VkInstance mInstance;
+    VkDebugUtilsMessengerEXT mDebugMessenger;
 };
 
