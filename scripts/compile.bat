@@ -1,5 +1,3 @@
-@echo off
-pushd %~dp0\..\
-call vendor\bin\premake\premake5.exe vs2022
-popd
-PAUSE
+%VULKAN_SDK%/Bin/glslc.exe ..\Vulkan\src\Shaders\shader.vert -o ..\Vulkan\src\Shaders\vert.spv
+%VULKAN_SDK%/Bin/glslc.exe ..\Vulkan\src\Shaders\shader.frag -o ..\Vulkan\src\Shaders\frag.spv
+pause

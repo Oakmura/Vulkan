@@ -10,3 +10,6 @@ bin-intermediate/
 **.vcxproj.filters
 **.vcxproj.user
 **.csproj
+
+# Shaders
+**.spv
