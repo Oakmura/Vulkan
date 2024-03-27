@@ -67,6 +67,7 @@ void HelloTriangleApp::initVulkan()
     pickPhysicalDevice();
     createLogicalDevice();
     createSwapChain();
+    createImageViews();
 }
 
 void HelloTriangleApp::createInstance() 
@@ -495,6 +496,37 @@ VkExtent2D HelloTriangleApp::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
     return actualExtent;
 }
 
+void HelloTriangleApp::createImageViews()
+{
+    mSwapChainImageViews.resize(mSwapChainImages.size());
+
+    for (size_t i = 0; i < mSwapChainImages.size(); ++i) 
+    {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = mSwapChainImages[i];
+
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = mSwapChainImageFormat;
+
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // color target
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(mLogicalDevice, &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS) 
+        {
+            throw std::runtime_error("failed to create image views!");
+        }
+    }
+}
+
 void HelloTriangleApp::mainLoop() 
 {
     while (!glfwWindowShouldClose(mpWindow))
@@ -505,6 +537,10 @@ void HelloTriangleApp::mainLoop()
 
 void HelloTriangleApp::cleanup() 
 {
+    for (auto imageView : mSwapChainImageViews) 
+    {
+        vkDestroyImageView(mLogicalDevice, imageView, nullptr);
+    }
     vkDestroySwapchainKHR(mLogicalDevice, mSwapChain, nullptr);
     vkDestroyDevice(mLogicalDevice, nullptr);
 
