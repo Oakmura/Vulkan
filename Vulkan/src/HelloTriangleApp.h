@@ -114,6 +114,7 @@ private:
     void createSyncObjects();
 
     void createVertexBuffer();
+    void createIndexBuffer();
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
@@ -161,6 +162,8 @@ private:
 
     VkBuffer mVertexBuffer;
     VkDeviceMemory mVertexBufferMemory;
+    VkBuffer mIndexBuffer;
+    VkDeviceMemory mIndexBufferMemory;
 
     uint32_t mCurrentFrame = 0;
     bool mbFramebufferResized = false;
