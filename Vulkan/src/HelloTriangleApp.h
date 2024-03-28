@@ -67,7 +67,7 @@ private:
     void createFramebuffers();
 
     void createCommandPool();
-    void createCommandBuffer();
+    void createCommandBuffers();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void createSyncObjects();
 
@@ -79,6 +79,7 @@ private:
 
 private:
     enum { WIDTH = 800, HEIGHT = 600 };
+    enum { MAX_FRAMES_IN_FLIGHT = 2 };
 
     const std::vector<const char*> mRequiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
     const std::vector<const char*> mRequiredValidationLayers = { "VK_LAYER_KHRONOS_validation" };
@@ -105,10 +106,11 @@ private:
     std::vector<VkFramebuffer> mSwapChainFramebuffers;
 
     VkCommandPool mCommandPool;
-    VkCommandBuffer mCommandBuffer;
+    std::vector<VkCommandBuffer> mCommandBuffers;
+    std::vector<VkSemaphore> mImageAvailableSemaphores;
+    std::vector<VkSemaphore> mRenderFinishedSemaphores;
+    std::vector<VkFence> mInFlightFences;
 
-    VkSemaphore mImageAvailableSemaphore;
-    VkSemaphore mRenderFinishedSemaphore;
-    VkFence mInFlightFence;
+    uint32_t mCurrentFrame = 0;
 };
 
