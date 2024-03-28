@@ -113,6 +113,8 @@ private:
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void createSyncObjects();
 
+    void createVertexBuffer();
+    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     void mainLoop();
     void drawFrame();
@@ -153,6 +155,9 @@ private:
     std::vector<VkSemaphore> mImageAvailableSemaphores;
     std::vector<VkSemaphore> mRenderFinishedSemaphores;
     std::vector<VkFence> mInFlightFences;
+
+    VkBuffer mVertexBuffer;
+    VkDeviceMemory mVertexBufferMemory;
 
     uint32_t mCurrentFrame = 0;
     bool mbFramebufferResized = false;
