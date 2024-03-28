@@ -32,6 +32,14 @@ public:
 public:
     void Run();
 
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+
+    static std::vector<char> readFile(const std::string& filename);
+    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
+
 private:
     void initWindow();
 
@@ -55,6 +63,7 @@ private:
     void createLogicalDevice();
 
     void createSwapChain();
+    void recreateSwapChain();
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
@@ -76,6 +85,7 @@ private:
     void drawFrame();
 
     void cleanup();
+    void cleanupSwapChain();
 
 private:
     enum { WIDTH = 800, HEIGHT = 600 };
@@ -112,5 +122,6 @@ private:
     std::vector<VkFence> mInFlightFences;
 
     uint32_t mCurrentFrame = 0;
+    bool mbFramebufferResized = false;
 };
 

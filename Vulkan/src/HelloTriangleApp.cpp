@@ -8,17 +8,6 @@
     static constexpr bool sEnableValidationLayers = true;
 #endif
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
-    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
-    void* pUserData) 
-{
-    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
-    return VK_FALSE;
-}
-
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) 
 {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -41,7 +30,18 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 }
 
-static std::vector<char> readFile(const std::string& filename) 
+VKAPI_ATTR VkBool32 VKAPI_CALL HelloTriangleApp::debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData)
+{
+    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+    return VK_FALSE;
+}
+
+std::vector<char> HelloTriangleApp::readFile(const std::string& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open()) 
@@ -57,6 +57,12 @@ static std::vector<char> readFile(const std::string& filename)
     file.close();
 
     return buffer;
+}
+
+void HelloTriangleApp::framebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+    auto* app = reinterpret_cast<HelloTriangleApp*>(glfwGetWindowUserPointer(window));
+    app->mbFramebufferResized = true;
 }
 
 void HelloTriangleApp::Run() 
@@ -75,6 +81,8 @@ void HelloTriangleApp::initWindow()
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+    glfwSetWindowUserPointer(mpWindow, this);
+    glfwSetFramebufferSizeCallback(mpWindow, framebufferResizeCallback);
 }
 
 void HelloTriangleApp::initVulkan() 
@@ -470,6 +478,25 @@ void HelloTriangleApp::createSwapChain()
 
     mSwapChainImageFormat = surfaceFormat.format;
     mSwapChainExtent = extent;
+}
+
+void HelloTriangleApp::recreateSwapChain()
+{
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(mpWindow, &width, &height);
+    while (width == 0 || height == 0) 
+    {
+        glfwGetFramebufferSize(mpWindow, &width, &height);
+        glfwWaitEvents();
+    }
+
+    vkDeviceWaitIdle(mDevice);
+
+    cleanupSwapChain();
+
+    createSwapChain();
+    createImageViews();
+    createFramebuffers();
 }
 
 VkSurfaceFormatKHR HelloTriangleApp::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
@@ -904,10 +931,20 @@ void HelloTriangleApp::mainLoop()
 void HelloTriangleApp::drawFrame()
 {
     vkWaitForFences(mDevice, 1, &mInFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(mDevice, mSwapChain, UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(mDevice, mSwapChain, UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &imageIndex);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) 
+    {
+        recreateSwapChain();
+        return;
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) 
+    {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
+    vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
 
     vkResetCommandBuffer(mCommandBuffers[mCurrentFrame], 0);
     recordCommandBuffer(mCommandBuffers[mCurrentFrame], imageIndex);
@@ -943,35 +980,38 @@ void HelloTriangleApp::drawFrame()
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
 
-    vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mbFramebufferResized) 
+    {
+        mbFramebufferResized = false;
+        recreateSwapChain();
+    }
+    else if (result != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to present swap chain image!");
+    }
 
     mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void HelloTriangleApp::cleanup() 
 {
+    cleanupSwapChain();
+
+    vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
+
+    vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) 
     {
         vkDestroySemaphore(mDevice, mRenderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(mDevice, mImageAvailableSemaphores[i], nullptr);
         vkDestroyFence(mDevice, mInFlightFences[i], nullptr);
     }
+
     vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
-    for (auto framebuffer : mSwapChainFramebuffers) 
-    {
-        vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
-    }
-
-    vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
-    vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
-
-    for (auto imageView : mSwapChainImageViews) 
-    {
-        vkDestroyImageView(mDevice, imageView, nullptr);
-    }
-    vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
     vkDestroyDevice(mDevice, nullptr);
 
     if (sEnableValidationLayers) 
@@ -985,4 +1025,19 @@ void HelloTriangleApp::cleanup()
     glfwDestroyWindow(mpWindow);
 
     glfwTerminate();
+}
+
+void HelloTriangleApp::cleanupSwapChain()
+{
+    for (auto framebuffer : mSwapChainFramebuffers)
+    {
+        vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+    }
+
+    for (auto imageView : mSwapChainImageViews)
+    {
+        vkDestroyImageView(mDevice, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
 }
