@@ -69,8 +69,11 @@ private:
     void createCommandPool();
     void createCommandBuffer();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void createSyncObjects();
+
 
     void mainLoop();
+    void drawFrame();
 
     void cleanup();
 
@@ -86,7 +89,7 @@ private:
     VkSurfaceKHR mSurface;
 
     VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
-    VkDevice mLogicalDevice;
+    VkDevice mDevice;
     VkQueue mGraphicsQueue;
     VkQueue mPresentQueue;
 
@@ -103,5 +106,9 @@ private:
 
     VkCommandPool mCommandPool;
     VkCommandBuffer mCommandBuffer;
+
+    VkSemaphore mImageAvailableSemaphore;
+    VkSemaphore mRenderFinishedSemaphore;
+    VkFence mInFlightFence;
 };
 
