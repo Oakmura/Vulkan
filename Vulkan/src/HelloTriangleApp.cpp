@@ -2,11 +2,20 @@
 
 #include "HelloTriangleApp.h"
 
+#include <glm/glm.hpp>
+
 #ifdef NDEBUG
     static constexpr bool sEnableValidationLayers = false;
 #else
     static constexpr bool sEnableValidationLayers = true;
 #endif
+
+const std::vector<Vertex> vertices =
+{
+    {{ 0.0f, -0.5f}, {1.0f, 0.0f, 0.0f }},
+    {{ 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f }},
+    {{ -0.5f, 0.5f}, {0.0f, 0.0f, 1.0f }},
+};
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) 
 {
@@ -604,10 +613,14 @@ void HelloTriangleApp::createGraphicsPipeline()
     // vertex input states
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+
+    auto bindingDescription = Vertex::GetBindingDescription();
+    auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     // input assembly states
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
