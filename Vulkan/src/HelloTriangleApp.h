@@ -64,6 +64,8 @@ private:
     void createGraphicsPipeline();
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createRenderPass();
+    
+    void createFramebuffers();
 
     void mainLoop();
 
@@ -94,5 +96,7 @@ private:
     VkPipelineLayout mPipelineLayout;
     VkRenderPass mRenderPass;
     VkPipeline mGraphicsPipeline;
+
+    std::vector<VkFramebuffer> mSwapChainFramebuffers;
 };
 
