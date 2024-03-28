@@ -93,5 +93,6 @@ private:
 
     VkPipelineLayout mPipelineLayout;
     VkRenderPass mRenderPass;
+    VkPipeline mGraphicsPipeline;
 };
 
