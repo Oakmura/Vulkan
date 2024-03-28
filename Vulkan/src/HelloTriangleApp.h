@@ -54,6 +54,13 @@ struct Vertex
     }
 };
 
+struct UniformBufferObject 
+{
+    glm::mat4 Model;
+    glm::mat4 View;
+    glm::mat4 Proj;
+};
+
 class HelloTriangleApp final
 {
 public:
@@ -118,6 +125,10 @@ private:
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
+    void createDescriptorSetLayout();
+    void createUniformBuffers();
+    void updateUniformBuffer(uint32_t currentImage);
+
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
     void mainLoop();
@@ -149,6 +160,7 @@ private:
     std::vector<VkImage> mSwapChainImages;
     std::vector<VkImageView> mSwapChainImageViews;
 
+    VkDescriptorSetLayout mDescriptorSetLayout;
     VkPipelineLayout mPipelineLayout;
     VkRenderPass mRenderPass;
     VkPipeline mGraphicsPipeline;
@@ -164,6 +176,10 @@ private:
     VkDeviceMemory mVertexBufferMemory;
     VkBuffer mIndexBuffer;
     VkDeviceMemory mIndexBufferMemory;
+
+    std::vector<VkBuffer> mUniformBuffers;
+    std::vector<VkDeviceMemory> mUniformBuffersMemory;
+    std::vector<void*> mUniformBuffersMapped;
 
     uint32_t mCurrentFrame = 0;
     bool mbFramebufferResized = false;
