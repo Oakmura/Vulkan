@@ -22,7 +22,6 @@ workspace "Vulkan"
     IncludeDir["glfw"] = "%{wks.location}/%{wks.name}/vendor/glfw/include"
     IncludeDir["Vulkan"] = "C:/VulkanSDK/1.3.280.0/Include"
     
-    
 group "Dependencies"    
     include "Vulkan/vendor/glfw"
 group ""

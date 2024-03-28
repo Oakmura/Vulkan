@@ -54,7 +54,7 @@ struct Vertex
     }
 };
 
-struct UniformBufferObject 
+struct alignas(16) UniformBufferObject
 {
     glm::mat4 Model;
     glm::mat4 View;
@@ -127,6 +127,8 @@ private:
 
     void createDescriptorSetLayout();
     void createUniformBuffers();
+    void createDescriptorPool();
+    void createDescriptorSets();
     void updateUniformBuffer(uint32_t currentImage);
 
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -180,6 +182,9 @@ private:
     std::vector<VkBuffer> mUniformBuffers;
     std::vector<VkDeviceMemory> mUniformBuffersMemory;
     std::vector<void*> mUniformBuffersMapped;
+
+    VkDescriptorPool mDescriptorPool;
+    std::vector<VkDescriptorSet> mDescriptorSets;
 
     uint32_t mCurrentFrame = 0;
     bool mbFramebufferResized = false;
