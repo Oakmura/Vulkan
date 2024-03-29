@@ -21,6 +21,7 @@ workspace "Vulkan"
     IncludeDir["glm"] = "%{wks.location}/%{wks.name}/vendor/glm"
     IncludeDir["glfw"] = "%{wks.location}/%{wks.name}/vendor/glfw/include"
     IncludeDir["Vulkan"] = "C:/VulkanSDK/1.3.280.0/Include"
+    IncludeDir["stb_image"] = "%{wks.location}/%{wks.name}/vendor/stb_image"
     
 group "Dependencies"    
     include "Vulkan/vendor/glfw"
@@ -45,6 +46,7 @@ group ""
             "%{prj.name}/src/**.cpp",
             "%{prj.name}/vendor/glm/glm/**.hpp",
             "%{prj.name}/vendor/glm/glm/**.inl",
+            "%{prj.name}/vendor/stb_image/stb_image.h",
         }
 
         defines
@@ -58,6 +60,7 @@ group ""
             "%{IncludeDir.glm}",
             "%{IncludeDir.glfw}",
             "%{IncludeDir.Vulkan}",
+            "%{IncludeDir.stb_image}",
         }
 
         links

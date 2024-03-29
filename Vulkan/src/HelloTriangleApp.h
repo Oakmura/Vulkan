@@ -131,7 +131,17 @@ private:
     void createDescriptorSets();
     void updateUniformBuffer(uint32_t currentImage);
 
+    void createTextureImage();
+    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+
+    VkCommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+
+    
 
     void mainLoop();
     void drawFrame();
@@ -185,6 +195,9 @@ private:
 
     VkDescriptorPool mDescriptorPool;
     std::vector<VkDescriptorSet> mDescriptorSets;
+
+    VkImage mTextureImage;
+    VkDeviceMemory mTextureImageMemory;
 
     uint32_t mCurrentFrame = 0;
     bool mbFramebufferResized = false;
