@@ -2,4 +2,4 @@
 
 <a name = "snapshots"></a>
 ## Snapshot as of now
-![Rectangle](https://github.com/Oakmura/Vulkan/blob/main/Screenshots/Rectangle_UBO_rotation.gif)
+![Texture](https://github.com/Oakmura/Vulkan/blob/main/Screenshots/texture.gif)
