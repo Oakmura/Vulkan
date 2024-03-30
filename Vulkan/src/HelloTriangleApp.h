@@ -108,8 +108,6 @@ private:
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-    void createImageViews();
-
     void createGraphicsPipeline();
     VkShaderModule createShaderModule(const std::vector<char>& code);
     void createRenderPass();
@@ -133,7 +131,12 @@ private:
 
     void createTextureImage();
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+    void createTextureImageView();
+    VkImageView createImageView(VkImage image, VkFormat format);
+    void createImageViews();
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    
+    void createTextureSampler();
 
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -198,6 +201,8 @@ private:
 
     VkImage mTextureImage;
     VkDeviceMemory mTextureImageMemory;
+    VkImageView mTextureImageView;
+    VkSampler mTextureSampler;
 
     uint32_t mCurrentFrame = 0;
     bool mbFramebufferResized = false;

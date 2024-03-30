@@ -116,6 +116,8 @@ void HelloTriangleApp::initVulkan()
     createFramebuffers();
     createCommandPool();
     createTextureImage();
+    createTextureImageView();
+    createTextureSampler();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -313,7 +315,10 @@ bool HelloTriangleApp::isDeviceSuitable(VkPhysicalDevice device)
         swapChainAdequate = !swapChainSupport.Formats.empty() && !swapChainSupport.PresentModes.empty();
     }
 
-    return indices.IsComplete() && extensionsSupported && swapChainAdequate;
+    VkPhysicalDeviceFeatures supportedFeatures;
+    vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+    return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
 
 bool HelloTriangleApp::checkDeviceExtensionSupport(VkPhysicalDevice device)
@@ -414,6 +419,7 @@ void HelloTriangleApp::createLogicalDevice()
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -574,30 +580,9 @@ void HelloTriangleApp::createImageViews()
 {
     mSwapChainImageViews.resize(mSwapChainImages.size());
 
-    for (size_t i = 0; i < mSwapChainImages.size(); ++i) 
+    for (uint32_t i = 0; i < mSwapChainImages.size(); ++i)
     {
-        VkImageViewCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        createInfo.image = mSwapChainImages[i];
-
-        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        createInfo.format = mSwapChainImageFormat;
-
-        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; // color target
-        createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.levelCount = 1;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.layerCount = 1;
-
-        if (vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS) 
-        {
-            throw std::runtime_error("failed to create image views!");
-        }
+        mSwapChainImageViews[i] = createImageView(mSwapChainImages[i], mSwapChainImageFormat);
     }
 }
 
@@ -1154,6 +1139,33 @@ void HelloTriangleApp::createImage(uint32_t width, uint32_t height, VkFormat for
     vkBindImageMemory(mDevice, image, imageMemory, 0);
 }
 
+void HelloTriangleApp::createTextureImageView()
+{
+    mTextureImageView = createImageView(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB);
+}
+
+VkImageView HelloTriangleApp::createImageView(VkImage image, VkFormat format)
+{
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    VkImageView imageView;
+    if (vkCreateImageView(mDevice, &viewInfo, nullptr, &imageView) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to create texture image view!");
+    }
+
+    return imageView;
+}
+
 void HelloTriangleApp::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
@@ -1205,6 +1217,35 @@ void HelloTriangleApp::transitionImageLayout(VkImage image, VkFormat format, VkI
         );
     }
     endSingleTimeCommands(commandBuffer);
+}
+
+void HelloTriangleApp::createTextureSampler()
+{
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
+
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK; // color to fill when sampling beyond image in clamp to border
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE; // used for pcf filtering for shadow maps
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+
+    if (vkCreateSampler(mDevice, &samplerInfo, nullptr, &mTextureSampler) != VK_SUCCESS) 
+    {
+        throw std::runtime_error("failed to create texture sampler!");
+    }
 }
 
 VkCommandBuffer HelloTriangleApp::beginSingleTimeCommands()
@@ -1423,6 +1464,9 @@ void HelloTriangleApp::drawFrame()
 void HelloTriangleApp::cleanup() 
 {
     cleanupSwapChain();
+
+    vkDestroySampler(mDevice, mTextureSampler, nullptr);
+    vkDestroyImageView(mDevice, mTextureImageView, nullptr);
 
     vkDestroyImage(mDevice, mTextureImage, nullptr);
     vkFreeMemory(mDevice, mTextureImageMemory, nullptr);
