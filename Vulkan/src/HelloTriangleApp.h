@@ -27,6 +27,11 @@ struct Vertex
     glm::vec3 Color;
     glm::vec2 TexCoord;
 
+    bool operator==(const Vertex& other) const 
+    {
+        return Pos == other.Pos && Color == other.Color && TexCoord == other.TexCoord;
+    }
+
     static VkVertexInputBindingDescription GetBindingDescription() 
     {
         VkVertexInputBindingDescription bindingDescription{};
@@ -59,6 +64,19 @@ struct Vertex
         return attributeDescriptions;
     }
 };
+
+namespace std
+{
+    template<> struct hash<Vertex>
+    {
+        size_t operator()(Vertex const& vertex) const
+        {
+            return ((hash<glm::vec3>()(vertex.Pos) ^
+                (hash<glm::vec3>()(vertex.Color) << 1)) >> 1) ^
+                (hash<glm::vec2>()(vertex.TexCoord) << 1);
+        }
+    };
+}
 
 struct alignas(16) UniformBufferObject
 {
@@ -154,7 +172,7 @@ private:
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-    
+    void loadModel();
 
     void mainLoop();
     void drawFrame();
@@ -197,11 +215,6 @@ private:
     std::vector<VkSemaphore> mRenderFinishedSemaphores;
     std::vector<VkFence> mInFlightFences;
 
-    VkBuffer mVertexBuffer;
-    VkDeviceMemory mVertexBufferMemory;
-    VkBuffer mIndexBuffer;
-    VkDeviceMemory mIndexBufferMemory;
-
     std::vector<VkBuffer> mUniformBuffers;
     std::vector<VkDeviceMemory> mUniformBuffersMemory;
     std::vector<void*> mUniformBuffersMapped;
@@ -217,6 +230,15 @@ private:
     VkImage mDepthImage;
     VkDeviceMemory mDepthImageMemory;
     VkImageView mDepthImageView;
+
+    std::vector<Vertex> mVertices;
+    std::vector<uint32_t> mIndices;
+    VkBuffer mVertexBuffer;
+    VkDeviceMemory mVertexBufferMemory;
+    VkBuffer mIndexBuffer;
+    VkDeviceMemory mIndexBufferMemory;
+
+    std::unordered_map<Vertex, uint32_t> mUniqueVertices;
 
     uint32_t mCurrentFrame = 0;
     bool mbFramebufferResized = false;
