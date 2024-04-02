@@ -3,20 +3,23 @@
 #include "Window.h"
 #include "Pipeline.h"
 
-class Application final
+namespace lve
 {
-public:
-    Application();
-    ~Application() = default;
-    Application(const Application&) = delete;
-    Application& operator=(const Application&) = delete;
+    class Application final
+    {
+    public:
+        Application();
+        ~Application() = default;
+        Application(const Application&) = delete;
+        Application& operator=(const Application&) = delete;
 
-    void Run();
+        void Run();
 
-private:
-    enum { WIDTH = 800, HEIGHT = 600 };
+    private:
+        enum { WIDTH = 800, HEIGHT = 600 };
 
-    Window mWindow;
-    Pipeline mPipeline;
-};
+        Window mWindow;
+        Pipeline mPipeline;
+    };
+}
 

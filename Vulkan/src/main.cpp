@@ -4,7 +4,7 @@
 
 int main()
 {
-    Application app;
+    lve::Application app;
 
     app.Run();
 

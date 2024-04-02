@@ -2,20 +2,23 @@
 
 #include "Window.h"
 
-Window::Window(int width, int height, const char* name)
-    : mWidth(width)
-    , mHeight(height)
-    , mpWindowName(name)
+namespace lve
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    Window::Window(int width, int height, const char* name)
+        : mWidth(width)
+        , mHeight(height)
+        , mpWindowName(name)
+    {
+        glfwInit();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    mpWindow = glfwCreateWindow(mWidth, mHeight, mpWindowName, nullptr, nullptr);
-}
+        mpWindow = glfwCreateWindow(mWidth, mHeight, mpWindowName, nullptr, nullptr);
+    }
 
-Window::~Window()
-{
-    glfwDestroyWindow(mpWindow);
-    glfwTerminate();
+    Window::~Window()
+    {
+        glfwDestroyWindow(mpWindow);
+        glfwTerminate();
+    }
 }

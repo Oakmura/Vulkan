@@ -2,16 +2,19 @@
 
 #include "Application.h"
 
-Application::Application()
-    : mWindow(WIDTH, HEIGHT, "Hello Vulkan!")
-    , mPipeline("Resources/Shaders/SimpleShaderVert.spv", "Resources/Shaders/SimpleShaderFrag.spv")
-{   
-}
-
-void Application::Run()
+namespace lve
 {
-    while (!mWindow.ShouldClose()) 
+    Application::Application()
+        : mWindow(WIDTH, HEIGHT, "Hello Vulkan!")
+        , mPipeline("Resources/Shaders/SimpleShaderVert.spv", "Resources/Shaders/SimpleShaderFrag.spv")
     {
-        glfwPollEvents();
+    }
+
+    void Application::Run()
+    {
+        while (!mWindow.ShouldClose())
+        {
+            glfwPollEvents();
+        }
     }
 }
