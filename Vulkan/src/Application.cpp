@@ -9,12 +9,13 @@ Application::Application()
     , mDevice(mWindow)
     , mSwapChain(mDevice, mWindow.GetExtent())
 {
+    loadModels();
     createPipelineLayout();
     createPipeline();
     createCommandBuffers();
 }
 
- Application::~Application() 
+Application::~Application() 
  { 
      vkDestroyPipelineLayout(mDevice.Get(), mPipelineLayout, nullptr);
  }
@@ -28,6 +29,12 @@ void Application::Run()
     }
 
     vkDeviceWaitIdle(mDevice.Get());
+}
+
+void Application::loadModels() 
+{
+    std::vector<Model::Vertex> vertices{{{0.0f, -0.5f}}, {{0.5f, 0.5f}}, {{-0.5f, 0.5f}}};
+    mModel = std::make_unique<Model>(mDevice, vertices);
 }
 
 void Application::createPipelineLayout() 
@@ -88,7 +95,8 @@ void Application::createCommandBuffers()
         vkCmdBeginRenderPass(mCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         mPipeline->Bind(mCommandBuffers[i]);
-        vkCmdDraw(mCommandBuffers[i], 3, 1, 0, 0);
+        mModel->Bind(mCommandBuffers[i]);
+        mModel->Draw(mCommandBuffers[i]);
 
         vkCmdEndRenderPass(mCommandBuffers[i]);
         VK_ASSERT(vkEndCommandBuffer(mCommandBuffers[i]), "vkEndCommandBuffer() : Failed to end command buffer")
@@ -99,10 +107,7 @@ void Application::drawFrame()
 {
     uint32_t imageIndex;
     auto result = mSwapChain.AcquireNextImage(&imageIndex);
-    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-    {
-        ASSERT(false, "failed to acquire swap chain image")
-    }
+    ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "failed to acquire swap chain image")
 
     VK_ASSERT(mSwapChain.SubmitCommandBuffers(&mCommandBuffers[imageIndex], &imageIndex), "SubmitCommandBuffers() : Failed to submit command buffers");
 }

@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "SwapChain.h"
 #include "Device.h"
+#include "Model.h"
 #include "Pipeline.h"
 
 namespace lve
@@ -19,6 +20,7 @@ namespace lve
         void Run();
 
     private:
+        void loadModels();
         void createPipelineLayout();
         void createPipeline();
         void createCommandBuffers();
@@ -34,6 +36,8 @@ namespace lve
         std::unique_ptr<Pipeline> mPipeline;
         VkPipelineLayout mPipelineLayout;
         std::vector<VkCommandBuffer> mCommandBuffers;
+
+        std::unique_ptr<Model> mModel;
     };
 }
 
