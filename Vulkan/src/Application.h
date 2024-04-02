@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.h"
+#include "Pipeline.h"
 
 class Application final
 {
@@ -16,5 +17,6 @@ private:
     enum { WIDTH = 800, HEIGHT = 600 };
 
     Window mWindow;
+    Pipeline mPipeline;
 };
 

@@ -15,9 +15,6 @@ public:
     inline bool ShouldClose() { return glfwWindowShouldClose(mpWindow); }
 
 private:
-    void initWindow();
-
-private:
     int mWidth;
     int mHeight;
 

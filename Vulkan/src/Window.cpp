@@ -7,20 +7,15 @@ Window::Window(int width, int height, const char* name)
     , mHeight(height)
     , mpWindowName(name)
 {
-    initWindow();
+    glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+    mpWindow = glfwCreateWindow(mWidth, mHeight, mpWindowName, nullptr, nullptr);
 }
 
 Window::~Window()
 {
     glfwDestroyWindow(mpWindow);
     glfwTerminate();
-}
-
-void Window::initWindow()
-{
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
-    mpWindow = glfwCreateWindow(mWidth, mHeight, mpWindowName, nullptr, nullptr);
-    glfwSetWindowUserPointer(mpWindow, this);
 }
