@@ -11,3 +11,12 @@
 #else
 #define VK_ASSERT(x, ...)
 #endif
+
+namespace lve
+{
+    class BasicUtils final
+    {
+    public:
+        static std::vector<char> ReadFile(const char *filename);
+    };
+}

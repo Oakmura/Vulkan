@@ -2,20 +2,22 @@
 
 #include <spdlog/spdlog.h>
 
-class Logger final
+namespace lve
 {
-public:
-    Logger() = delete;
-    ~Logger() = delete;
-    Logger(const Logger& rhs) = delete;
-    Logger& operator=(const Logger& rhs) = delete;
+    class Logger final
+    {
+    public:
+        Logger() = delete;
+        ~Logger() = delete;
+        Logger(const Logger& rhs) = delete;
+        Logger& operator=(const Logger& rhs) = delete;
 
-    static void Init();
-    inline static std::shared_ptr<spdlog::logger>& GetLogger() { return sLogger; }
+        static void Init();
+        inline static std::shared_ptr<spdlog::logger>& GetLogger() { return sLogger; }
 
-private:
-    static std::shared_ptr<spdlog::logger> sLogger;
-};
+    private:
+        static std::shared_ptr<spdlog::logger> sLogger;
+    };
 
 #ifndef DIST
 #define LOG_TRACE(...) Logger::GetLogger()->trace(__VA_ARGS__)
@@ -28,3 +30,4 @@ private:
 #define LOG_WARN(...)
 #define LOG_ERROR(...)
 #endif // DIST
+}

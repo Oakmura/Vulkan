@@ -2,9 +2,11 @@
 
 #include "Device.h"
 
-
 struct PipelineConfigInfo 
 {
+    PipelineConfigInfo(const PipelineConfigInfo&) = delete;
+    PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
+
     VkViewport Viewport;
     VkRect2D Scissor;
     VkPipelineViewportStateCreateInfo ViewportInfo;
@@ -31,11 +33,9 @@ namespace lve
         Pipeline& operator=(const Pipeline& rhs) = delete;
 
     public:
-        static PipelineConfigInfo CreateDefaultPipelineConfigInfo(uint32_t width, uint32_t height);
+        static void CreateDefaultPipelineConfigInfo(PipelineConfigInfo* outConfigInfo, uint32_t width, uint32_t height);
 
-    private:
-        static std::vector<char> readFile(const char* filename);
-
+        void Bind(VkCommandBuffer commandBuffer);
         void createShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule);
 
     private:

@@ -4,7 +4,7 @@
 
 int main()
 {
-    Logger::Init();
+    lve::Logger::Init();
     lve::Application app;
 
     app.Run();

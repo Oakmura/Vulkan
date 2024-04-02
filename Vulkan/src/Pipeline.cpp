@@ -9,8 +9,8 @@ namespace lve
     {
         ASSERT(configInfo.PipelineLayout != VK_NULL_HANDLE && configInfo.RenderPass != VK_NULL_HANDLE, "Pipeline() : Failed to create Pipeline");
 
-        std::vector<char> vertShaderCode = readFile("Resources/Shaders/vert.spv");
-        std::vector<char> fragShaderCode = readFile("Resources/Shaders/frag.spv");
+        std::vector<char> vertShaderCode = BasicUtils::ReadFile(vertFilename);
+        std::vector<char> fragShaderCode = BasicUtils::ReadFile(fragFilename);
 
         createShaderModule(vertShaderCode, &mVertShaderModule);
         createShaderModule(fragShaderCode, &mFragShaderModule);
@@ -68,99 +68,85 @@ namespace lve
         vkDestroyPipeline(mDevice.Get(), mGraphicsPipeline, nullptr);
     }
 
-    PipelineConfigInfo Pipeline::CreateDefaultPipelineConfigInfo(uint32_t width, uint32_t height)
+    void Pipeline::CreateDefaultPipelineConfigInfo(PipelineConfigInfo *outConfigInfo, uint32_t width, uint32_t height) 
     {
-        PipelineConfigInfo configInfo{};
+        outConfigInfo->InputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        outConfigInfo->InputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        outConfigInfo->InputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
-        configInfo.InputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        configInfo.InputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        configInfo.InputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
+        outConfigInfo->Viewport.x = 0.0f;
+        outConfigInfo->Viewport.y = 0.0f;
+        outConfigInfo->Viewport.width = static_cast<float>(width);
+        outConfigInfo->Viewport.height = static_cast<float>(height);
+        outConfigInfo->Viewport.minDepth = 0.0f;
+        outConfigInfo->Viewport.maxDepth = 1.0f;
 
-        configInfo.Viewport.x = 0.0f;
-        configInfo.Viewport.y = 0.0f;
-        configInfo.Viewport.width = static_cast<float>(width);
-        configInfo.Viewport.height = static_cast<float>(height);
-        configInfo.Viewport.minDepth = 0.0f;
-        configInfo.Viewport.maxDepth = 1.0f;
+        outConfigInfo->Scissor.offset = {0, 0};
+        outConfigInfo->Scissor.extent = {width, height};
 
-        configInfo.Scissor.offset = { 0, 0 };
-        configInfo.Scissor.extent = { width, height };
+        outConfigInfo->ViewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        outConfigInfo->ViewportInfo.viewportCount = 1;
+        outConfigInfo->ViewportInfo.pViewports = &outConfigInfo->Viewport;
+        outConfigInfo->ViewportInfo.scissorCount = 1;
+        outConfigInfo->ViewportInfo.pScissors = &outConfigInfo->Scissor;
 
-        configInfo.ViewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        configInfo.ViewportInfo.viewportCount = 1;
-        configInfo.ViewportInfo.pViewports = &configInfo.Viewport;
-        configInfo.ViewportInfo.scissorCount = 1;
-        configInfo.ViewportInfo.pScissors = &configInfo.Scissor;
+        outConfigInfo->RasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        outConfigInfo->RasterizationInfo.depthClampEnable = VK_FALSE;
+        outConfigInfo->RasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
+        outConfigInfo->RasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
+        outConfigInfo->RasterizationInfo.lineWidth = 1.0f;
+        outConfigInfo->RasterizationInfo.cullMode = VK_CULL_MODE_NONE;
+        outConfigInfo->RasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        outConfigInfo->RasterizationInfo.depthBiasEnable = VK_FALSE;
+        outConfigInfo->RasterizationInfo.depthBiasConstantFactor = 0.0f; // Optional
+        outConfigInfo->RasterizationInfo.depthBiasClamp = 0.0f;          // Optional
+        outConfigInfo->RasterizationInfo.depthBiasSlopeFactor = 0.0f;    // Optional
 
-        configInfo.RasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        configInfo.RasterizationInfo.depthClampEnable = VK_FALSE;
-        configInfo.RasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
-        configInfo.RasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
-        configInfo.RasterizationInfo.lineWidth = 1.0f;
-        configInfo.RasterizationInfo.cullMode = VK_CULL_MODE_NONE;
-        configInfo.RasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-        configInfo.RasterizationInfo.depthBiasEnable = VK_FALSE;
-        configInfo.RasterizationInfo.depthBiasConstantFactor = 0.0f;  // Optional
-        configInfo.RasterizationInfo.depthBiasClamp = 0.0f;           // Optional
-        configInfo.RasterizationInfo.depthBiasSlopeFactor = 0.0f;     // Optional
+        outConfigInfo->MultisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        outConfigInfo->MultisampleInfo.sampleShadingEnable = VK_FALSE;
+        outConfigInfo->MultisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        outConfigInfo->MultisampleInfo.minSampleShading = 1.0f;          // Optional
+        outConfigInfo->MultisampleInfo.pSampleMask = nullptr;            // Optional
+        outConfigInfo->MultisampleInfo.alphaToCoverageEnable = VK_FALSE; // Optional
+        outConfigInfo->MultisampleInfo.alphaToOneEnable = VK_FALSE;      // Optional
 
-        configInfo.MultisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-        configInfo.MultisampleInfo.sampleShadingEnable = VK_FALSE;
-        configInfo.MultisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-        configInfo.MultisampleInfo.minSampleShading = 1.0f;           // Optional
-        configInfo.MultisampleInfo.pSampleMask = nullptr;             // Optional
-        configInfo.MultisampleInfo.alphaToCoverageEnable = VK_FALSE;  // Optional
-        configInfo.MultisampleInfo.alphaToOneEnable = VK_FALSE;       // Optional
+        outConfigInfo->ColorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        outConfigInfo->ColorBlendAttachment.blendEnable = VK_FALSE;
+        outConfigInfo->ColorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
+        outConfigInfo->ColorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+        outConfigInfo->ColorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;             // Optional
+        outConfigInfo->ColorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;  // Optional
+        outConfigInfo->ColorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+        outConfigInfo->ColorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;             // Optional
 
-        configInfo.ColorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        configInfo.ColorBlendAttachment.blendEnable = VK_FALSE;
-        configInfo.ColorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
-        configInfo.ColorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
-        configInfo.ColorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;              // Optional
-        configInfo.ColorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
-        configInfo.ColorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;  // Optional
-        configInfo.ColorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;              // Optional
+        outConfigInfo->ColorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        outConfigInfo->ColorBlendInfo.logicOpEnable = VK_FALSE;
+        outConfigInfo->ColorBlendInfo.logicOp = VK_LOGIC_OP_COPY; // Optional
+        outConfigInfo->ColorBlendInfo.attachmentCount = 1;
+        outConfigInfo->ColorBlendInfo.pAttachments = &outConfigInfo->ColorBlendAttachment;
+        outConfigInfo->ColorBlendInfo.blendConstants[0] = 0.0f; // Optional
+        outConfigInfo->ColorBlendInfo.blendConstants[1] = 0.0f; // Optional
+        outConfigInfo->ColorBlendInfo.blendConstants[2] = 0.0f; // Optional
+        outConfigInfo->ColorBlendInfo.blendConstants[3] = 0.0f; // Optional
 
-        configInfo.ColorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        configInfo.ColorBlendInfo.logicOpEnable = VK_FALSE;
-        configInfo.ColorBlendInfo.logicOp = VK_LOGIC_OP_COPY;  // Optional
-        configInfo.ColorBlendInfo.attachmentCount = 1;
-        configInfo.ColorBlendInfo.pAttachments = &configInfo.ColorBlendAttachment;
-        configInfo.ColorBlendInfo.blendConstants[0] = 0.0f;  // Optional
-        configInfo.ColorBlendInfo.blendConstants[1] = 0.0f;  // Optional
-        configInfo.ColorBlendInfo.blendConstants[2] = 0.0f;  // Optional
-        configInfo.ColorBlendInfo.blendConstants[3] = 0.0f;  // Optional
-
-        configInfo.DepthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        configInfo.DepthStencilInfo.depthTestEnable = VK_TRUE;
-        configInfo.DepthStencilInfo.depthWriteEnable = VK_TRUE;
-        configInfo.DepthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
-        configInfo.DepthStencilInfo.depthBoundsTestEnable = VK_FALSE;
-        configInfo.DepthStencilInfo.minDepthBounds = 0.0f;  // Optional
-        configInfo.DepthStencilInfo.maxDepthBounds = 1.0f;  // Optional
-        configInfo.DepthStencilInfo.stencilTestEnable = VK_FALSE;
-        configInfo.DepthStencilInfo.front = {};  // Optional
-        configInfo.DepthStencilInfo.back = {};   // Optional
-
-        return configInfo;
+        outConfigInfo->DepthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        outConfigInfo->DepthStencilInfo.depthTestEnable = VK_TRUE;
+        outConfigInfo->DepthStencilInfo.depthWriteEnable = VK_TRUE;
+        outConfigInfo->DepthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+        outConfigInfo->DepthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+        outConfigInfo->DepthStencilInfo.minDepthBounds = 0.0f; // Optional
+        outConfigInfo->DepthStencilInfo.maxDepthBounds = 1.0f; // Optional
+        outConfigInfo->DepthStencilInfo.stencilTestEnable = VK_FALSE;
+        outConfigInfo->DepthStencilInfo.front = {}; // Optional
+        outConfigInfo->DepthStencilInfo.back = {};  // Optional
     }
 
-    std::vector<char> Pipeline::readFile(const char* filename)
+    void Pipeline::Bind(VkCommandBuffer commandBuffer) 
     {
-        std::ifstream file(filename, std::ios::ate | std::ios::binary);
-        ASSERT(file.is_open(), "readFile() : Failed to open file {0}", filename);
-
-        size_t fileSize = (size_t)file.tellg();
-        std::vector<char> buffer(fileSize);
-
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-        file.close();
-
-        return buffer;
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
     }
 
-    void Pipeline::createShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule)
+    void Pipeline::createShaderModule(const std::vector<char> &code, VkShaderModule *shaderModule)
     {
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
