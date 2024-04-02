@@ -575,8 +575,8 @@ void HelloTriangleApp::createImageViews()
 void HelloTriangleApp::createGraphicsPipeline()
 {
     // shaders
-    std::vector<char> vertShaderCode = readFile("Shaders/vert.spv");
-    std::vector<char> fragShaderCode = readFile("Shaders/frag.spv");
+    std::vector<char> vertShaderCode = readFile("Resources/Shaders/vert.spv");
+    std::vector<char> fragShaderCode = readFile("Resources/Shaders/frag.spv");
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -1109,7 +1109,7 @@ void HelloTriangleApp::loadModel()
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "Models/viking_room.obj"))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "Resources/Models/viking_room.obj"))
     {
         throw std::runtime_error(warn + err);
     }
@@ -1149,7 +1149,7 @@ void HelloTriangleApp::loadModel()
 void HelloTriangleApp::createTextureImage()
 {
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("Textures/viking_room.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load("Resources/Textures/viking_room.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) 
