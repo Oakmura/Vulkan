@@ -271,7 +271,6 @@ void HelloTriangleApp::pickPhysicalDevice()
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
-
     for (const auto& device : devices) 
     {
         if (isDeviceSuitable(device)) 
@@ -289,22 +288,17 @@ void HelloTriangleApp::pickPhysicalDevice()
 
 bool HelloTriangleApp::isDeviceSuitable(VkPhysicalDevice device)
 {
-    /* can score each device with properties and features
-    VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-    */
+    // later change this to select discrete gpu if existent
 
     QueueFamilyIndices indices = findQueueFamilies(device);
 
-    bool extensionsSupported = checkDeviceExtensionSupport(device);
+    bool extensionsSupported = checkDeviceExtensionSupport(device); // swapchain extension
 
     bool swapChainAdequate = false;
     if (extensionsSupported) 
     {
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-        swapChainAdequate = !swapChainSupport.Formats.empty() && !swapChainSupport.PresentModes.empty();
+        swapChainAdequate = !swapChainSupport.Formats.empty() && !swapChainSupport.PresentModes.empty(); // minimum requirement
     }
 
     VkPhysicalDeviceFeatures supportedFeatures;
@@ -581,8 +575,8 @@ void HelloTriangleApp::createImageViews()
 void HelloTriangleApp::createGraphicsPipeline()
 {
     // shaders
-    std::vector<char> vertShaderCode = readFile("src/Shaders/vert.spv");
-    std::vector<char> fragShaderCode = readFile("src/Shaders/frag.spv");
+    std::vector<char> vertShaderCode = readFile("Shaders/vert.spv");
+    std::vector<char> fragShaderCode = readFile("Shaders/frag.spv");
 
     VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
@@ -1115,7 +1109,7 @@ void HelloTriangleApp::loadModel()
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "src/Models/viking_room.obj"))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "Models/viking_room.obj"))
     {
         throw std::runtime_error(warn + err);
     }
@@ -1155,7 +1149,7 @@ void HelloTriangleApp::loadModel()
 void HelloTriangleApp::createTextureImage()
 {
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load("src/Textures/viking_room.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load("Textures/viking_room.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
 
     if (!pixels) 
