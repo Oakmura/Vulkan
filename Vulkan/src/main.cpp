@@ -1,20 +1,12 @@
 #include "Precompiled.h"
 
-#include "HelloTriangleApp.h"
+#include "Application.h"
 
 int main()
 {
-    HelloTriangleApp app;
+    Application app;
 
-    try
-    {
-        app.Run();
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
+    app.Run();
 
     return EXIT_SUCCESS;
 }
