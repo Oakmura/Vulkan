@@ -16,6 +16,11 @@ namespace lve
         mpWindow = glfwCreateWindow(mWidth, mHeight, mpWindowName, nullptr, nullptr);
     }
 
+    void Window::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface)
+    {
+        VK_ASSERT(glfwCreateWindowSurface(instance, mpWindow, nullptr, surface) != VK_SUCCESS)
+    }
+
     Window::~Window()
     {
         glfwDestroyWindow(mpWindow);

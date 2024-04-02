@@ -6,7 +6,8 @@ namespace lve
 {
     Application::Application()
         : mWindow(WIDTH, HEIGHT, "Hello Vulkan!")
-        , mPipeline("Resources/Shaders/SimpleShaderVert.spv", "Resources/Shaders/SimpleShaderFrag.spv")
+        , mDevice(mWindow)
+        , mPipeline(mDevice, "Resources/Shaders/SimpleShaderVert.spv", "Resources/Shaders/SimpleShaderFrag.spv", Pipeline::CreateDefaultPipelineConfigInfo(WIDTH, HEIGHT))
     {
     }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Window.h"
+#include "Device.h"
 #include "Pipeline.h"
 
 namespace lve
@@ -19,6 +20,7 @@ namespace lve
         enum { WIDTH = 800, HEIGHT = 600 };
 
         Window mWindow;
+        Device mDevice;
         Pipeline mPipeline;
     };
 }
