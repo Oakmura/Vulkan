@@ -26,4 +26,5 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
+#include "Core/Logger.h"
 #include "Utils/BasicUtils.h"

@@ -62,7 +62,7 @@ namespace lve
 
     void Device::createInstance()
     {
-        ASSERT(mbEnableValidationLayers && checkValidationLayerSupport())
+        ASSERT(mbEnableValidationLayers && checkValidationLayerSupport(), "checkValidationLayerSupport() : Validation Support is not enabled")
 
         VkApplicationInfo appInfo = {};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -95,16 +95,16 @@ namespace lve
             createInfo.pNext = nullptr;
         }
 
-        VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &mInstance))
+        VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &mInstance), "vkCreateInstance() : Failed to create Instance")
 
-        hasGflwRequiredInstanceExtensions();
+        hasGlfwRequiredInstanceExtensions();
     }
 
     void Device::pickPhysicalDevice()
     {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
-        ASSERT(deviceCount != 0)
+        ASSERT(deviceCount != 0, "vkEnumeratePhysicalDevices() : There is not compatible GPU")
         std::cout << "Device count: " << deviceCount << std::endl;
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -118,7 +118,7 @@ namespace lve
             }
         }
 
-        ASSERT(mPhysicalDevice != VK_NULL_HANDLE)
+        ASSERT(mPhysicalDevice != VK_NULL_HANDLE, "pickPhysicalDevice() : Failed to find suitable physical device")
 
         vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
         std::cout << "physical device: " << properties.deviceName << std::endl;
@@ -166,7 +166,7 @@ namespace lve
             createInfo.enabledLayerCount = 0;
         }
 
-        VK_ASSERT(vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice))
+        VK_ASSERT(vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice), "vkCreateDevice() : Failed to create logical device")
 
         vkGetDeviceQueue(mDevice, indices.GraphicsFamily, 0, &mGraphicsQueue);
         vkGetDeviceQueue(mDevice, indices.PresentFamily, 0, &mPresentQueue);
@@ -181,7 +181,7 @@ namespace lve
         poolInfo.queueFamilyIndex = queueFamilyIndices.GraphicsFamily;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-        VK_ASSERT(vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool))
+        VK_ASSERT(vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool), "vkCreateCommandPool() : Failed to create Command Pool")
     }
 
     void Device::createSurface() 
@@ -227,7 +227,7 @@ namespace lve
 
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
-        VK_ASSERT(CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger))
+        VK_ASSERT(CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger), "CreateDebugUtilsMessengerEXT() : Failed to create DebugMessenger")
     }
 
     std::vector<const char *> Device::getRequiredExtensions()
@@ -276,7 +276,7 @@ namespace lve
         return true;
     }
 
-    void Device::hasGflwRequiredInstanceExtensions()
+    void Device::hasGlfwRequiredInstanceExtensions()
     {
         uint32_t extensionCount = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -296,7 +296,7 @@ namespace lve
         for (const auto &required : requiredExtensions)
         {
             std::cout << "\t" << required << std::endl;
-            ASSERT(available.find(required) != available.end())
+            ASSERT(available.find(required) != available.end(), "hasGlfwRequiredInstanceExtensions() : Failed to support required extensions")
         }
     }
 
@@ -398,9 +398,8 @@ namespace lve
             }
         }
 
-        ASSERT(false)
-            std::cout << "FindSupportedFormat : Could not find format" << std::endl;
-            exit(-1);
+        ASSERT(false, "FindSupportedFormat() : Failed to find supported format")
+        exit(-1);
     }
 
     uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
@@ -415,8 +414,8 @@ namespace lve
             }
         }
 
-        ASSERT(false)
-            return -1;
+        ASSERT(false, "FindMemoryType() : Failed to find memory type")
+        exit(-1);
     }
 
     void Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
@@ -427,7 +426,7 @@ namespace lve
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VK_ASSERT(vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer))
+        VK_ASSERT(vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer), "vkCreateBuffer() : Failed to create buffer")
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(mDevice, buffer, &memRequirements);
@@ -437,8 +436,8 @@ namespace lve
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-        VK_ASSERT(vkAllocateMemory(mDevice, &allocInfo, nullptr, &bufferMemory))
-        VK_ASSERT(vkBindBufferMemory(mDevice, buffer, bufferMemory, 0))
+        VK_ASSERT(vkAllocateMemory(mDevice, &allocInfo, nullptr, &bufferMemory), "vkAllocateMemory() : Failed to allocate memory")
+        VK_ASSERT(vkBindBufferMemory(mDevice, buffer, bufferMemory, 0), "vkBindBufferMemory() : Failed to bind buffer memory")
     }
 
     VkCommandBuffer Device::BeginSingleTimeCommands()
@@ -512,7 +511,7 @@ namespace lve
 
     void Device::CreateImageWithInfo(const VkImageCreateInfo &imageInfo, VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &imageMemory)
     {
-        VK_ASSERT(vkCreateImage(mDevice, &imageInfo, nullptr, &image))
+        VK_ASSERT(vkCreateImage(mDevice, &imageInfo, nullptr, &image), "vkCreateImage() : Failed to create Image")
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(mDevice, image, &memRequirements);
@@ -522,8 +521,8 @@ namespace lve
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-        VK_ASSERT(vkAllocateMemory(mDevice, &allocInfo, nullptr, &imageMemory))
-        VK_ASSERT(vkBindImageMemory(mDevice, image, imageMemory, 0))
+        VK_ASSERT(vkAllocateMemory(mDevice, &allocInfo, nullptr, &imageMemory), "vkAllocateMemory() : Failed to allocate memory for image")
+        VK_ASSERT(vkBindImageMemory(mDevice, image, imageMemory, 0), "vkBindImageMemory() : Failed to bind memory for image")
     }
 
 } // namespace lve

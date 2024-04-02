@@ -7,7 +7,7 @@ namespace lve
     Pipeline::Pipeline(Device& device, const char* vertFilename, const char* fragFilename, const PipelineConfigInfo& configInfo)
         : mDevice(device)
     {
-        ASSERT(configInfo.PipelineLayout != VK_NULL_HANDLE && configInfo.RenderPass != VK_NULL_HANDLE);
+        ASSERT(configInfo.PipelineLayout != VK_NULL_HANDLE && configInfo.RenderPass != VK_NULL_HANDLE, "Pipeline() : Failed to create Pipeline");
 
         std::vector<char> vertShaderCode = readFile("Resources/Shaders/vert.spv");
         std::vector<char> fragShaderCode = readFile("Resources/Shaders/frag.spv");
@@ -58,7 +58,7 @@ namespace lve
         pipelineInfo.basePipelineIndex = -1;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-        VK_ASSERT(vkCreateGraphicsPipelines(mDevice.Get(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mGraphicsPipeline))
+        VK_ASSERT(vkCreateGraphicsPipelines(mDevice.Get(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mGraphicsPipeline), "vkCreateGraphicsPipelines() : Failed to create GraphicsPipelines")
     }
 
     Pipeline::~Pipeline()
@@ -148,7 +148,7 @@ namespace lve
     std::vector<char> Pipeline::readFile(const char* filename)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
-        ASSERT(file.is_open());
+        ASSERT(file.is_open(), "readFile() : Failed to open file {0}", filename);
 
         size_t fileSize = (size_t)file.tellg();
         std::vector<char> buffer(fileSize);
@@ -167,6 +167,6 @@ namespace lve
         createInfo.codeSize = code.size();
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-        VK_ASSERT(vkCreateShaderModule(mDevice.Get(), &createInfo, nullptr, shaderModule))
+        VK_ASSERT(vkCreateShaderModule(mDevice.Get(), &createInfo, nullptr, shaderModule), "vkCreateShaderModule() : Failed to create Shader Module")
     }
 }

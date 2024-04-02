@@ -62,7 +62,7 @@ namespace lve
         std::vector<const char*> getRequiredExtensions();
         bool checkValidationLayerSupport();
         void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-        void hasGflwRequiredInstanceExtensions();
+        void hasGlfwRequiredInstanceExtensions();
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 
         QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);

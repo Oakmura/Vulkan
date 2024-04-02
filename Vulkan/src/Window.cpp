@@ -18,7 +18,7 @@ namespace lve
 
     void Window::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface)
     {
-        VK_ASSERT(glfwCreateWindowSurface(instance, mpWindow, nullptr, surface) != VK_SUCCESS)
+        VK_ASSERT(glfwCreateWindowSurface(instance, mpWindow, nullptr, surface), "glfwCreateWindowSurface() : Failed to create window surface")
     }
 
     Window::~Window()

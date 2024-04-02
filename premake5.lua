@@ -20,6 +20,7 @@ workspace "Vulkan"
     IncludeDir = {}
     IncludeDir["glm"] = "%{wks.location}/%{wks.name}/vendor/glm"
     IncludeDir["glfw"] = "%{wks.location}/%{wks.name}/vendor/glfw/include"
+    IncludeDir["spdlog"] = "%{wks.location}/%{wks.name}/vendor/spdlog/include"
     IncludeDir["Vulkan"] = "C:/VulkanSDK/1.3.280.0/Include"
     IncludeDir["stb_image"] = "%{wks.location}/%{wks.name}/vendor/stb_image"
     IncludeDir["tiny_obj_loader"] = "%{wks.location}/%{wks.name}/vendor/tiny_obj_loader"
@@ -61,6 +62,7 @@ group ""
             "%{prj.name}/src",
             "%{IncludeDir.glm}",
             "%{IncludeDir.glfw}",
+            "%{IncludeDir.spdlog}",
             "%{IncludeDir.Vulkan}",
             "%{IncludeDir.stb_image}",
             "%{IncludeDir.tiny_obj_loader}",
