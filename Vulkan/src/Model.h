@@ -16,6 +16,7 @@ public:
         static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
     };
 
+    Model() = delete;
     Model(Device &device, const std::vector<Vertex> &vertices);
     ~Model();
     Model(const Model &) = delete;
@@ -26,6 +27,7 @@ public:
 
 private:
     Device &mDevice;
+
     VkBuffer mVertexBuffer;
     VkDeviceMemory mVertexBufferMemory;
     uint32_t mVertexCount;

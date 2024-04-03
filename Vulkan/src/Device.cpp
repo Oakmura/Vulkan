@@ -104,7 +104,7 @@ namespace lve
     {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
-        ASSERT(deviceCount != 0, "vkEnumeratePhysicalDevices() : There is not compatible GPU")
+        ASSERT(deviceCount > 0, "vkEnumeratePhysicalDevices() : There is not compatible GPU")
         std::cout << "Device count: " << deviceCount << std::endl;
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -120,8 +120,8 @@ namespace lve
 
         ASSERT(mPhysicalDevice != VK_NULL_HANDLE, "pickPhysicalDevice() : Failed to find suitable physical device")
 
-        vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
-        std::cout << "physical device: " << properties.deviceName << std::endl;
+        vkGetPhysicalDeviceProperties(mPhysicalDevice, &mProperties);
+        std::cout << "physical device: " << mProperties.deviceName << std::endl;
     }
 
     void Device::createLogicalDevice()
@@ -147,10 +147,8 @@ namespace lve
 
         VkDeviceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
         createInfo.pEnabledFeatures = &deviceFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(mDeviceExtensions.size());
         createInfo.ppEnabledExtensionNames = mDeviceExtensions.data();
@@ -193,19 +191,19 @@ namespace lve
     {
         QueueFamilyIndices indices = findQueueFamilies(device);
 
-        bool extensionsSupported = checkDeviceExtensionSupport(device);
+        bool extensionsSupported = checkDeviceExtensionSupport(device); // Swapchain
 
         bool swapChainAdequate = false;
         if (extensionsSupported)
         {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device); // queries Surface related features
             swapChainAdequate = !swapChainSupport.Formats.empty() && !swapChainSupport.PresentModes.empty();
         }
 
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-        return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+        return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy; // can early exit
     }
 
     void Device::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo)
@@ -362,7 +360,6 @@ namespace lve
 
         uint32_t formatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
-
         if (formatCount != 0)
         {
             details.Formats.resize(formatCount);
@@ -371,7 +368,6 @@ namespace lve
 
         uint32_t presentModeCount;
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
-
         if (presentModeCount != 0)
         {
             details.PresentModes.resize(presentModeCount);

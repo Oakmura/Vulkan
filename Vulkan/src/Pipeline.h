@@ -36,10 +36,13 @@ namespace lve
         static void CreateDefaultPipelineConfigInfo(PipelineConfigInfo* outConfigInfo);
 
         void Bind(VkCommandBuffer commandBuffer);
+
+    private:
         void createShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule);
 
     private:
         Device& mDevice; // device always outlives pipeline
+
         VkPipeline mGraphicsPipeline;
         VkShaderModule mVertShaderModule;
         VkShaderModule mFragShaderModule;

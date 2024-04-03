@@ -34,6 +34,7 @@ namespace lve
 
     private:
         void init();
+
         void createSwapChain();
         void createImageViews();
         void createDepthResources();
@@ -49,22 +50,22 @@ namespace lve
     private:
         enum { MAX_FRAMES_IN_FLIGHT = 2 };
 
-        VkFormat mSwapChainImageFormat;
-        VkExtent2D mSwapChainExtent;
-        std::vector<VkFramebuffer> mSwapChainFramebuffers;
-        VkRenderPass mRenderPass;
-
-        std::vector<VkImage> mDepthImages;
-        std::vector<VkDeviceMemory> mDepthImageMemorys;
-        std::vector<VkImageView> mDepthImageViews;
-        std::vector<VkImage> mSwapChainImages;
-        std::vector<VkImageView> mSwapChainImageViews;
-
         Device& mDevice;
-        VkExtent2D mWindowExtent;
 
         VkSwapchainKHR mSwapChain;
         std::shared_ptr<SwapChain> mOldSwapChain;
+
+        VkExtent2D mWindowExtent;
+        VkExtent2D mSwapChainExtent;
+        VkFormat mSwapChainImageFormat;
+
+        VkRenderPass mRenderPass;
+        std::vector<VkImage> mSwapChainImages;
+        std::vector<VkImageView> mSwapChainImageViews;
+        std::vector<VkFramebuffer> mSwapChainFramebuffers;
+        std::vector<VkImage> mDepthImages;
+        std::vector<VkDeviceMemory> mDepthImageMemorys;
+        std::vector<VkImageView> mDepthImageViews;
 
         std::vector<VkSemaphore> mImageAvailableSemaphores;
         std::vector<VkSemaphore> mRenderFinishedSemaphores;

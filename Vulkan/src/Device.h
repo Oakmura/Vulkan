@@ -24,6 +24,7 @@ namespace lve
     class Device final
     {
     public:
+        Device() = delete;
         Device(Window& window);
         ~Device();
         Device(const Device&) = delete;
@@ -51,22 +52,22 @@ namespace lve
         void CreateImageWithInfo(const VkImageCreateInfo& imageInfo,VkMemoryPropertyFlags properties,VkImage& image,VkDeviceMemory& imageMemory);
 
     private:
+        bool isDeviceSuitable(VkPhysicalDevice device);
+        bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+        std::vector<const char*> getRequiredExtensions();
+        void hasGlfwRequiredInstanceExtensions();
+        bool checkValidationLayerSupport();
+        void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
+        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+        SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
         void createInstance();
         void setupDebugMessenger();
         void createSurface();
         void pickPhysicalDevice();
         void createLogicalDevice();
         void createCommandPool();
-
-        bool isDeviceSuitable(VkPhysicalDevice device);
-        std::vector<const char*> getRequiredExtensions();
-        bool checkValidationLayerSupport();
-        void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-        void hasGlfwRequiredInstanceExtensions();
-        bool checkDeviceExtensionSupport(VkPhysicalDevice device);
-
-        QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-        SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
     private:
 #ifdef NDEBUG
@@ -77,16 +78,17 @@ namespace lve
         const std::vector<const char*> mDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
         const std::vector<const char*> mValidationLayers = { "VK_LAYER_KHRONOS_validation" };
 
+        Window& mWindow;
+
         VkInstance mInstance;
         VkDebugUtilsMessengerEXT mDebugMessenger;
-        VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
-        VkPhysicalDeviceProperties properties;
-        Window& mWindow;
-        VkCommandPool mCommandPool;
-
-        VkDevice mDevice;
         VkSurfaceKHR mSurface;
+        VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
+        VkPhysicalDeviceProperties mProperties;
+        VkDevice mDevice;
         VkQueue mGraphicsQueue;
         VkQueue mPresentQueue;
+
+        VkCommandPool mCommandPool;
     };
 }  // namespace lve
