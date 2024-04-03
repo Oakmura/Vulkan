@@ -7,8 +7,6 @@ struct PipelineConfigInfo
     PipelineConfigInfo(const PipelineConfigInfo&) = delete;
     PipelineConfigInfo& operator=(const PipelineConfigInfo&) = delete;
 
-    VkViewport Viewport;
-    VkRect2D Scissor;
     VkPipelineViewportStateCreateInfo ViewportInfo;
     VkPipelineInputAssemblyStateCreateInfo InputAssemblyInfo;
     VkPipelineRasterizationStateCreateInfo RasterizationInfo;
@@ -16,6 +14,8 @@ struct PipelineConfigInfo
     VkPipelineColorBlendAttachmentState ColorBlendAttachment;
     VkPipelineColorBlendStateCreateInfo ColorBlendInfo;
     VkPipelineDepthStencilStateCreateInfo DepthStencilInfo;
+    std::vector<VkDynamicState> DynamicStateEnables;
+    VkPipelineDynamicStateCreateInfo DynamicStateInfo;
     VkPipelineLayout PipelineLayout = nullptr;
     VkRenderPass RenderPass = nullptr;
     uint32_t Subpass = 0;
@@ -33,7 +33,7 @@ namespace lve
         Pipeline& operator=(const Pipeline& rhs) = delete;
 
     public:
-        static void CreateDefaultPipelineConfigInfo(PipelineConfigInfo* outConfigInfo, uint32_t width, uint32_t height);
+        static void CreateDefaultPipelineConfigInfo(PipelineConfigInfo* outConfigInfo);
 
         void Bind(VkCommandBuffer commandBuffer);
         void createShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule);

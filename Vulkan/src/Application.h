@@ -21,9 +21,14 @@ namespace lve
 
     private:
         void loadModels();
+        void recreateSwapChain();
         void createPipelineLayout();
         void createPipeline();
+
         void createCommandBuffers();
+        void freeCommandBuffers();
+        void recordCommandBuffer(int imageIndex);
+
         void drawFrame();
 
     private:
@@ -31,8 +36,7 @@ namespace lve
 
         Window mWindow;
         Device mDevice;
-        SwapChain mSwapChain;
-
+        std::unique_ptr<SwapChain> mSwapChain;
         std::unique_ptr<Pipeline> mPipeline;
         VkPipelineLayout mPipelineLayout;
         std::vector<VkCommandBuffer> mCommandBuffers;

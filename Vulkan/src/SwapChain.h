@@ -10,7 +10,9 @@ namespace lve
     class SwapChain final
     {
     public:
+        SwapChain() = delete;
         SwapChain(Device& deviceRef, VkExtent2D windowExtent);
+        SwapChain(Device &deviceRef, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous);
         ~SwapChain();
         SwapChain(const SwapChain& rhs) = delete;
         SwapChain& operator=(const SwapChain& rhs) = delete;
@@ -31,6 +33,7 @@ namespace lve
         VkResult SubmitCommandBuffers(const VkCommandBuffer *buffers, uint32_t *imageIndex);
 
     private:
+        void init();
         void createSwapChain();
         void createImageViews();
         void createDepthResources();
@@ -61,6 +64,7 @@ namespace lve
         VkExtent2D mWindowExtent;
 
         VkSwapchainKHR mSwapChain;
+        std::shared_ptr<SwapChain> mOldSwapChain;
 
         std::vector<VkSemaphore> mImageAvailableSemaphores;
         std::vector<VkSemaphore> mRenderFinishedSemaphores;

@@ -8,13 +8,17 @@ namespace lve
         : mDevice(deviceRef)
         , mWindowExtent(extent)
     {
-        createSwapChain();
-        createImageViews();
-        createRenderPass();
-        createDepthResources();
-        createFramebuffers();
-        createSyncObjects();
+        init();
     }
+
+     SwapChain::SwapChain(Device &deviceRef, VkExtent2D windowExtent, std::shared_ptr<SwapChain> previous) 
+         : mDevice(deviceRef)
+         , mWindowExtent(windowExtent)
+         , mOldSwapChain(previous)
+     {
+        init();
+        mOldSwapChain = nullptr;
+     }
 
     SwapChain::~SwapChain()
     {
@@ -106,6 +110,16 @@ namespace lve
         return result;
     }
 
+    void SwapChain::init() 
+    {
+        createSwapChain();
+        createImageViews();
+        createRenderPass();
+        createDepthResources();
+        createFramebuffers();
+        createSyncObjects();
+    }
+
     void SwapChain::createSwapChain()
     {
         SwapChainSupportDetails swapChainSupport = mDevice.GetSwapChainSupport();
@@ -150,7 +164,7 @@ namespace lve
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.presentMode = presentMode;
         createInfo.clipped = VK_TRUE;
-        createInfo.oldSwapchain = VK_NULL_HANDLE;
+        createInfo.oldSwapchain = mOldSwapChain == nullptr ? VK_NULL_HANDLE : mOldSwapChain->mSwapChain;
 
         VK_ASSERT(vkCreateSwapchainKHR(mDevice.Get(), &createInfo, nullptr, &mSwapChain), "vkCreateSwapchainKHR() : Failed to create SwapChain")
 
