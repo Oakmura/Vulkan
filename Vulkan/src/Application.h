@@ -3,7 +3,7 @@
 #include "Window.h"
 #include "SwapChain.h"
 #include "Device.h"
-#include "Model.h"
+#include "GameObject.h"
 #include "Pipeline.h"
 
 namespace lve
@@ -22,9 +22,10 @@ namespace lve
     private:
         void drawFrame();
         void recordCommandBuffer(int imageIndex);
+        void renderGameObjects(VkCommandBuffer commandBuffer);
         void freeCommandBuffers();
 
-        void loadModels();
+        void loadGameObjects();
         void recreateSwapChain();
         void createPipelineLayout();
         void createPipeline();
@@ -35,8 +36,8 @@ namespace lve
 
         Window mWindow;
         Device mDevice;
-
-        std::unique_ptr<Model> mModel;
+        
+        std::vector<GameObject> mGameObjects;
 
         VkPipelineLayout mPipelineLayout;
         std::unique_ptr<SwapChain> mSwapChain;

@@ -6,24 +6,20 @@ namespace lve
 {
 struct SimplePushConstantData
 {
+    glm::mat2 Transform{1.f};
     glm::vec2 Offset;
     alignas(16) glm::vec3 Color;
 };
 
-Application::Application()
-    : mWindow(WIDTH, HEIGHT, "Hello Vulkan!")
-    , mDevice(mWindow)
+Application::Application() : mWindow(WIDTH, HEIGHT, "Hello Vulkan!"), mDevice(mWindow)
 {
-    loadModels();
+    loadGameObjects();
     createPipelineLayout();
     recreateSwapChain();
     createCommandBuffers();
 }
 
-Application::~Application() 
- { 
-     vkDestroyPipelineLayout(mDevice.Get(), mPipelineLayout, nullptr);
- }
+Application::~Application() { vkDestroyPipelineLayout(mDevice.Get(), mPipelineLayout, nullptr); }
 
 void Application::Run()
 {
@@ -36,19 +32,23 @@ void Application::Run()
     vkDeviceWaitIdle(mDevice.Get());
 }
 
-void Application::loadModels() 
+void Application::loadGameObjects()
 {
-    std::vector<Model::Vertex> vertices
-    {
-        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, 
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, 
-        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-    };
+    std::vector<Model::Vertex> vertices{{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
-    mModel = std::make_unique<Model>(mDevice, vertices);
+    auto model = std::make_shared<Model>(mDevice, vertices);
+
+    auto triangle = GameObject::CreateGameObject();
+    triangle.mModel = model;
+    triangle.mColor = {.1f, .8f, .1f};
+    triangle.mTransform2d.Translation.x = .2f;
+    triangle.mTransform2d.Scale = {2.f, .5f};
+    triangle.mTransform2d.Rotation = .25f * glm::two_pi<float>();
+
+    mGameObjects.push_back(std::move(triangle));
 }
 
-void Application::recreateSwapChain() 
+void Application::recreateSwapChain()
 {
     auto extent = mWindow.GetExtent();
     while (extent.width == 0 || extent.height == 0)
@@ -75,7 +75,7 @@ void Application::recreateSwapChain()
     createPipeline();
 }
 
-void Application::createPipelineLayout() 
+void Application::createPipelineLayout()
 {
     VkPushConstantRange pushConstantRange{};
     pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -89,10 +89,11 @@ void Application::createPipelineLayout()
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    VK_ASSERT(vkCreatePipelineLayout(mDevice.Get(), &pipelineLayoutInfo, nullptr, &mPipelineLayout), "vkCreatePipelineLayout() : Failed to create pipeline layout")
+    VK_ASSERT(vkCreatePipelineLayout(mDevice.Get(), &pipelineLayoutInfo, nullptr, &mPipelineLayout),
+              "vkCreatePipelineLayout() : Failed to create pipeline layout")
 }
 
-void Application::createPipeline() 
+void Application::createPipeline()
 {
     ASSERT(mSwapChain != nullptr, "Cannot create pipeline before swap chain");
     ASSERT(mPipelineLayout != nullptr, "Cannot create pipeline before pipeline layout");
@@ -102,10 +103,11 @@ void Application::createPipeline()
     pipelineConfig.RenderPass = mSwapChain->GetRenderPass();
     pipelineConfig.PipelineLayout = mPipelineLayout;
 
-    mPipeline = std::make_unique<Pipeline>(mDevice, "Resources/Shaders/SimpleShaderVert.spv", "Resources/Shaders/SimpleShaderFrag.spv", pipelineConfig);
+    mPipeline =
+        std::make_unique<Pipeline>(mDevice, "Resources/Shaders/SimpleShaderVert.spv", "Resources/Shaders/SimpleShaderFrag.spv", pipelineConfig);
 }
 
-void Application::createCommandBuffers() 
+void Application::createCommandBuffers()
 {
     mCommandBuffers.resize(mSwapChain->GetImageCount());
 
@@ -115,20 +117,18 @@ void Application::createCommandBuffers()
     allocInfo.commandPool = mDevice.GetCommandPool();
     allocInfo.commandBufferCount = static_cast<uint32_t>(mCommandBuffers.size());
 
-    VK_ASSERT(vkAllocateCommandBuffers(mDevice.Get(), &allocInfo, mCommandBuffers.data()), "vkAllocateCommandBuffers() : Failed to allocate command buffers")
+    VK_ASSERT(vkAllocateCommandBuffers(mDevice.Get(), &allocInfo, mCommandBuffers.data()),
+              "vkAllocateCommandBuffers() : Failed to allocate command buffers")
 }
 
-void Application::freeCommandBuffers() 
+void Application::freeCommandBuffers()
 {
-    vkFreeCommandBuffers(mDevice.Get(), mDevice.GetCommandPool(), static_cast<uint32_t>(mCommandBuffers.size()), mCommandBuffers.data()); 
+    vkFreeCommandBuffers(mDevice.Get(), mDevice.GetCommandPool(), static_cast<uint32_t>(mCommandBuffers.size()), mCommandBuffers.data());
     mCommandBuffers.clear();
 }
 
-void Application::recordCommandBuffer(int imageIndex) 
+void Application::recordCommandBuffer(int imageIndex)
 {
-    static int frame = 30;
-    frame = (frame + 1) % 100;
-
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -164,24 +164,30 @@ void Application::recordCommandBuffer(int imageIndex)
     vkCmdSetViewport(mCommandBuffers[imageIndex], 0, 1, &viewport);
     vkCmdSetScissor(mCommandBuffers[imageIndex], 0, 1, &scissor);
 
-    mPipeline->Bind(mCommandBuffers[imageIndex]);
-    mModel->Bind(mCommandBuffers[imageIndex]);
-
-    for (int j = 0; j < 4; j++)
-    {
-        SimplePushConstantData push{};
-        push.Offset = {-0.5f + frame * 0.02f, -0.4f + j * 0.25f};
-        push.Color = {0.0f, 0.0f, 0.2f + 0.2f * j};
-
-        vkCmdPushConstants(mCommandBuffers[imageIndex], mPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-                           sizeof(SimplePushConstantData), &push);
-        mModel->Draw(mCommandBuffers[imageIndex]);
-    }
-
-    mModel->Draw(mCommandBuffers[imageIndex]);
+    renderGameObjects(mCommandBuffers[imageIndex]);
 
     vkCmdEndRenderPass(mCommandBuffers[imageIndex]);
     VK_ASSERT(vkEndCommandBuffer(mCommandBuffers[imageIndex]), "vkEndCommandBuffer() : Failed to end command buffer")
+}
+
+void Application::renderGameObjects(VkCommandBuffer commandBuffer)
+{
+    mPipeline->Bind(commandBuffer);
+
+    for (auto &obj : mGameObjects)
+    {
+        obj.mTransform2d.Rotation = glm::mod(obj.mTransform2d.Rotation + 0.01f, glm::two_pi<float>());
+
+        SimplePushConstantData push{};
+        push.Offset = obj.mTransform2d.Translation;
+        push.Color = obj.mColor;
+        push.Transform = obj.mTransform2d.mat2();
+
+        vkCmdPushConstants(commandBuffer, mPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(SimplePushConstantData), &push);
+
+        obj.mModel->Bind(commandBuffer);
+        obj.mModel->Draw(commandBuffer);
+    }
 }
 
 void Application::drawFrame()
@@ -195,7 +201,7 @@ void Application::drawFrame()
     }
 
     ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "failed to acquire swap chain image")
-    
+
     recordCommandBuffer(imageIndex);
     result = mSwapChain->SubmitCommandBuffers(&mCommandBuffers[imageIndex], &imageIndex);
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mWindow.WasWindowResized())
@@ -204,7 +210,7 @@ void Application::drawFrame()
         recreateSwapChain();
         return;
     }
-    
+
     ASSERT(result == VK_SUCCESS, "SubmitCommandBuffers() : failed to present swap chain images!")
 }
 
