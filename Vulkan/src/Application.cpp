@@ -4,6 +4,12 @@
 
 namespace lve
 {
+struct SimplePushConstantData
+{
+    glm::vec2 Offset;
+    alignas(16) glm::vec3 Color;
+};
+
 Application::Application()
     : mWindow(WIDTH, HEIGHT, "Hello Vulkan!")
     , mDevice(mWindow)
@@ -71,12 +77,17 @@ void Application::recreateSwapChain()
 
 void Application::createPipelineLayout() 
 {
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(SimplePushConstantData);
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 0;
     pipelineLayoutInfo.pSetLayouts = nullptr;
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
     VK_ASSERT(vkCreatePipelineLayout(mDevice.Get(), &pipelineLayoutInfo, nullptr, &mPipelineLayout), "vkCreatePipelineLayout() : Failed to create pipeline layout")
 }
@@ -115,6 +126,9 @@ void Application::freeCommandBuffers()
 
 void Application::recordCommandBuffer(int imageIndex) 
 {
+    static int frame = 30;
+    frame = (frame + 1) % 100;
+
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -129,7 +143,7 @@ void Application::recordCommandBuffer(int imageIndex)
     renderPassInfo.renderArea.extent = mSwapChain->GetSwapChainExtent();
 
     std::array<VkClearValue, 2> clearValues{};
-    clearValues[0].color = {0.1f, 0.1f, 0.1f, 1.0f};
+    clearValues[0].color = {0.01f, 0.01f, 0.01f, 1.0f};
     clearValues[1].depthStencil = {1.0f, 0};
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
@@ -152,6 +166,18 @@ void Application::recordCommandBuffer(int imageIndex)
 
     mPipeline->Bind(mCommandBuffers[imageIndex]);
     mModel->Bind(mCommandBuffers[imageIndex]);
+
+    for (int j = 0; j < 4; j++)
+    {
+        SimplePushConstantData push{};
+        push.Offset = {-0.5f + frame * 0.02f, -0.4f + j * 0.25f};
+        push.Color = {0.0f, 0.0f, 0.2f + 0.2f * j};
+
+        vkCmdPushConstants(mCommandBuffers[imageIndex], mPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                           sizeof(SimplePushConstantData), &push);
+        mModel->Draw(mCommandBuffers[imageIndex]);
+    }
+
     mModel->Draw(mCommandBuffers[imageIndex]);
 
     vkCmdEndRenderPass(mCommandBuffers[imageIndex]);

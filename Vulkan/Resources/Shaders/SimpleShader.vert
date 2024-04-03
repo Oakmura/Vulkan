@@ -1,12 +1,14 @@
 #version 450
 
 layout(location = 0) in vec2 inPosition;
-layout(location = 1) in vec3 inColor;
 
-layout(location = 0) out vec3 outFragColor;
+layout(push_constant) uniform Push 
+{
+  vec2 Offset;
+  vec3 Color;
+} push;
 
 void main() 
 {
-  gl_Position = vec4(inPosition, 0.0, 1.0);
-  outFragColor = inColor;
+  gl_Position = vec4(inPosition + push.Offset, 0.0, 1.0);
 }
