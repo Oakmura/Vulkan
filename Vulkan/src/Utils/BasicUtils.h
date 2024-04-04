@@ -12,6 +12,10 @@
 #define VK_ASSERT(x, ...)
 #endif
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(ARR) (sizeof(ARR) / sizeof(ARR[0]))
+#endif
+
 namespace lve
 {
     class BasicUtils final
