@@ -5,6 +5,7 @@
 int main()
 {
     lve::Logger::Init();
+
     lve::Application app;
 
     app.Run();
