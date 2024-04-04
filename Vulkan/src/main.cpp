@@ -1,12 +1,12 @@
 #include "Precompiled.h"
 
-#include "Application.h"
+#include "TriangleApp.h"
 
 int main()
 {
     lve::Logger::Init();
 
-    lve::Application app;
+    lve::TriangleApp app;
 
     app.Run();
 
