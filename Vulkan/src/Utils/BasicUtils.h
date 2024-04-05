@@ -9,7 +9,7 @@
 #ifdef _DEBUG
 #define VK_ASSERT(x, ...) { if ((x) != VK_SUCCESS) { LOG_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
 #else
-#define VK_ASSERT(x, ...)
+#define VK_ASSERT(x, ...) x
 #endif
 
 #ifndef ARRAY_SIZE
