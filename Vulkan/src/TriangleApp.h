@@ -85,13 +85,13 @@ struct alignas(16) UniformBufferObject
     glm::mat4 Proj;
 };
 
-class Tutorial final
+class TriangleApp final
 {
 public:
-    Tutorial() = default;
-    ~Tutorial() = default;
-    Tutorial(const Tutorial &rhs) = delete;
-    Tutorial& operator=(const Tutorial &rhs) = delete;
+    TriangleApp() = default;
+    ~TriangleApp() = default;
+    TriangleApp(const TriangleApp &rhs) = delete;
+    TriangleApp& operator=(const TriangleApp &rhs) = delete;
 
 public:
     void Run();
