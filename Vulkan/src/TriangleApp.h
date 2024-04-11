@@ -3,6 +3,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+// #TODO integrate IMGUI
+
 struct Vertex
 {
     glm::vec3 Pos;
@@ -17,7 +19,7 @@ struct Vertex
     static VkVertexInputBindingDescription GetBindingDescription()
     {
         VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
+        bindingDescription.binding = 0; // index of the bindings
         bindingDescription.stride = sizeof(Vertex);
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
@@ -201,12 +203,12 @@ namespace lve
         VkExtent2D mSwapChainExtent;
         std::vector<VkImage> mSwapChainImages;
         std::vector<VkImageView> mSwapChainImageViews;
+        std::vector<VkFramebuffer> mSwapChainFramebuffers;
 
         VkDescriptorSetLayout mDescriptorSetLayout;
         VkPipelineLayout mPipelineLayout;
         VkRenderPass mRenderPass;
         VkPipeline mGraphicsPipeline;
-        std::vector<VkFramebuffer> mSwapChainFramebuffers;
 
         VkCommandPool mCommandPool;
         std::vector<VkCommandBuffer> mCommandBuffers;

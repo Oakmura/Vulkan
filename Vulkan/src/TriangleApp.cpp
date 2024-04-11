@@ -16,7 +16,7 @@ static constexpr bool sEnableValidationLayers = true;
 
 namespace lve
 {
-    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+    static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
     {
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
         if (func != nullptr)
@@ -29,7 +29,7 @@ namespace lve
         }
     }
 
-    void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+    static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
     {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr)
@@ -41,7 +41,7 @@ namespace lve
     VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        LOG_INFO("validation layer: {0}", pCallbackData->pMessage);
 
         return VK_FALSE;
     }
@@ -64,11 +64,11 @@ namespace lve
     {
         glfwInit();
 
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // tell it to not create OpenGL Context
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
         mpWindow = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-        glfwSetWindowUserPointer(mpWindow, this);
+        glfwSetWindowUserPointer(mpWindow, this); // store 'this' pointer to handle TriangleApp member variables in callback
         glfwSetFramebufferSizeCallback(mpWindow, framebufferResizeCallback);
     }
 
@@ -76,23 +76,31 @@ namespace lve
     {
         createInstance();
         setupDebugMessenger();
+
         createSurface();
+
         pickPhysicalDevice();
         createLogicalDevice();
+
         createSwapChain();
         createImageViews();
+
         createRenderPass();
         createDescriptorSetLayout();
         createGraphicsPipeline();
-        createCommandPool();
+
+        createCommandPool(); // graphics family pool
         createDepthResources();
+
         createFramebuffers();
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
+
         loadModel();
         createVertexBuffer();
         createIndexBuffer();
+
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
@@ -102,10 +110,7 @@ namespace lve
 
     void TriangleApp::createInstance()
     {
-        if (sEnableValidationLayers && !checkValidationSupport())
-        {
-            throw std::runtime_error("validation layers requested, but not available!");
-        }
+        ASSERT(sEnableValidationLayers && checkValidationSupport(), "validation layers requested, but not available");
 
         VkApplicationInfo appInfo{};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -155,10 +160,7 @@ namespace lve
             createInfo.pNext = nullptr;
         }
 
-        if (vkCreateInstance(&createInfo, nullptr, &mInstance) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create instance!");
-        }
+        VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &mInstance), "failed to create instance");
     }
 
     bool TriangleApp::checkValidationSupport()
@@ -218,10 +220,7 @@ namespace lve
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
-        if (CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to set up debug messenger!");
-        }
+        VK_ASSERT(CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger), "failed to create debug utils messenger");
     }
 
     void TriangleApp::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
@@ -235,20 +234,14 @@ namespace lve
 
     void TriangleApp::createSurface()
     {
-        if (glfwCreateWindowSurface(mInstance, mpWindow, nullptr, &mSurface) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create window surface!");
-        }
+        VK_ASSERT(glfwCreateWindowSurface(mInstance, mpWindow, nullptr, &mSurface), "glfwCreateWindowSurface() : failed to create window surface");
     }
 
     void TriangleApp::pickPhysicalDevice()
     {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
-        if (deviceCount == 0)
-        {
-            throw std::runtime_error("failed to find GPUs with Vulkan support!");
-        }
+        ASSERT(deviceCount > 0, "failed to find GPUs with Vulkan support!");
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
@@ -261,10 +254,7 @@ namespace lve
             }
         }
 
-        if (mPhysicalDevice == VK_NULL_HANDLE)
-        {
-            throw std::runtime_error("failed to find a suitable GPU!");
-        }
+        ASSERT(mPhysicalDevice != VK_NULL_HANDLE, "failed to find suitable physical device");
     }
 
     bool TriangleApp::isDeviceSuitable(VkPhysicalDevice device)
@@ -409,10 +399,7 @@ namespace lve
             createInfo.enabledLayerCount = 0;
         }
 
-        if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create logical device!");
-        }
+        VK_ASSERT(vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice), "failed to create logical device!");
 
         vkGetDeviceQueue(mDevice, indices.GraphicsFamily.value(), 0, &mGraphicsQueue);
         vkGetDeviceQueue(mDevice, indices.PresentFamily.value(), 0, &mPresentQueue);
@@ -463,10 +450,7 @@ namespace lve
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        if (vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create swap chain!");
-        }
+        VK_ASSERT(vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapChain), "vkCreateSwapchainKHR() : failed to create swapchain");
 
         vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, nullptr); // only queried min imageCount. need to query actual imageCount
         mSwapChainImages.resize(imageCount);
@@ -679,10 +663,7 @@ namespace lve
         pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-        if (vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create pipeline layout!");
-        }
+        VK_ASSERT(vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout), "vkCreatePipelineLayout() : failed to create pipeline layout");
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -702,10 +683,7 @@ namespace lve
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
 
-        if (vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mGraphicsPipeline) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create graphics pipeline!");
-        }
+        VK_ASSERT(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mGraphicsPipeline), "vkCreateGraphicsPipelines() : failed to create Graphics Pipeline");
 
         // clean up
         vkDestroyShaderModule(mDevice, fragShaderModule, nullptr); // can be deleted once Pipeline is created
@@ -720,10 +698,7 @@ namespace lve
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
         VkShaderModule shaderModule;
-        if (vkCreateShaderModule(mDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create shader module!");
-        }
+        VK_ASSERT(vkCreateShaderModule(mDevice, &createInfo, nullptr, &shaderModule), "vkCreateShaderModule() : failed to create shader module");
 
         return shaderModule;
     }
@@ -762,16 +737,16 @@ namespace lve
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef; // can use many color attachment
+        subpass.pColorAttachments = &colorAttachmentRef; // index of color attachment referenced by layout (location=0)
         subpass.pDepthStencilAttachment = &depthAttachmentRef; // can only use one depth and stencil attachment
 
         VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // index of subpass to wait
-        dependency.dstSubpass = 0; // index of current subpass
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT; // operation to wait
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // index of subpass to wait. specify EXTERNAL when src subpass dependency is previous 'renderpass'
+        dependency.dstSubpass = 0; // index of subpass waiting
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT; // operations to wait. src subpass should finish all srcStageMask operations before dstStageMask operations begin
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT; // operations not allowed to execute before all operations in srcStageMask in src subpass are done
         dependency.srcAccessMask = 0; // memory access types used by src
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT; // operations not allowed to execute
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // memory access types we will use
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // memory access types dst use
 
         // renderpasses
         std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
@@ -784,10 +759,7 @@ namespace lve
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create render pass!");
-        }
+        VK_ASSERT(vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass), "vkCreateRenderPass() : failed to create render pass");
     }
 
     void TriangleApp::createFramebuffers()
@@ -811,10 +783,7 @@ namespace lve
             framebufferInfo.height = mSwapChainExtent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &mSwapChainFramebuffers[i]) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to create framebuffer!");
-            }
+            VK_ASSERT(vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &mSwapChainFramebuffers[i]), "vkCreateFramebuffer() : failed to create framebuffer");
         }
     }
 
@@ -824,13 +793,10 @@ namespace lve
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // transient if allocated command buffers will be short-lived
+        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // transient if short-lived. reset if allow reset and reuse
         poolInfo.queueFamilyIndex = queueFamilyIndices.GraphicsFamily.value();
 
-        if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create command pool!");
-        }
+        VK_ASSERT(vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool), "vkCreateCommandPool() : failed to create command pool");
     }
 
     void TriangleApp::createVertexBuffer()
@@ -883,10 +849,7 @@ namespace lve
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create buffer!");
-        }
+        VK_ASSERT(vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer), "vkCreateBuffer() : failed to create buffer");
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(mDevice, buffer, &memRequirements);
@@ -896,17 +859,15 @@ namespace lve
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        if (vkAllocateMemory(mDevice, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate buffer memory!");
-        }
+        VK_ASSERT(vkAllocateMemory(mDevice, &allocInfo, nullptr, &bufferMemory), "vkAllocateMemory() : failed to allocated memory");
 
-        vkBindBufferMemory(mDevice, buffer, bufferMemory, 0);
+        vkBindBufferMemory(mDevice, buffer, bufferMemory, 0); // if offset is non-zero, it is required to be divisible by memRequirements.alignment
     }
 
     uint32_t TriangleApp::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
     {
-        VkPhysicalDeviceMemoryProperties memProperties;
+        // typeFilter is memRequirements.typeBits
+        VkPhysicalDeviceMemoryProperties memProperties; // memory heap = vram + swap space in RAM
         vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memProperties);
 
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; ++i)
@@ -917,7 +878,8 @@ namespace lve
             }
         }
 
-        throw std::runtime_error("failed to find suitable memory type!");
+        ASSERT(false, "failed to find suitable memory type!");
+        return std::numeric_limits<uint32_t>::max();
     }
 
     void TriangleApp::createDescriptorSetLayout()
@@ -931,10 +893,10 @@ namespace lve
 
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
         samplerLayoutBinding.binding = 1;
-        samplerLayoutBinding.descriptorCount = 1;
         samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerLayoutBinding.pImmutableSamplers = nullptr;
+        samplerLayoutBinding.descriptorCount = 1;
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        samplerLayoutBinding.pImmutableSamplers = nullptr;
 
         std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -942,10 +904,7 @@ namespace lve
         layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
         layoutInfo.pBindings = bindings.data();
 
-        if (vkCreateDescriptorSetLayout(mDevice, &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create descriptor set layout!");
-        }
+        VK_ASSERT(vkCreateDescriptorSetLayout(mDevice, &layoutInfo, nullptr, &mDescriptorSetLayout), "vkCreateDescriptorSetLayout() : failed to create descriptor set layout!");
     }
 
     void TriangleApp::createUniformBuffers()
@@ -978,10 +937,7 @@ namespace lve
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-        if (vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
+        VK_ASSERT(vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mDescriptorPool), "vkCreateDesciptorPool() : failed to create descriptor pool");
     }
 
     void TriangleApp::createDescriptorSets()
@@ -995,10 +951,7 @@ namespace lve
         allocInfo.pSetLayouts = layouts.data();
 
         mDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-        if (vkAllocateDescriptorSets(mDevice, &allocInfo, mDescriptorSets.data()) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
+        VK_ASSERT(vkAllocateDescriptorSets(mDevice, &allocInfo, mDescriptorSets.data()), "vkAllocateDescriptorSets() : failed to allocate descriptor sets!");
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
@@ -1072,7 +1025,7 @@ namespace lve
 
             region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             region.imageSubresource.mipLevel = 0;
-            region.imageSubresource.baseArrayLayer = 0;
+            region.imageSubresource.baseArrayLayer  = 0;
             region.imageSubresource.layerCount = 1;
 
             region.imageOffset = { 0, 0, 0 };
@@ -1090,10 +1043,7 @@ namespace lve
         std::vector<tinyobj::material_t> materials;
         std::string warn, err;
 
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "Resources/Models/viking_room.obj"))
-        {
-            throw std::runtime_error(warn + err);
-        }
+        ASSERT(tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "Resources/Models/viking_room.obj"), "failed to load resources");
 
         for (const auto& shape : shapes)
         {
@@ -1133,10 +1083,7 @@ namespace lve
         stbi_uc* pixels = stbi_load("Resources/Textures/viking_room.png", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         VkDeviceSize imageSize = texWidth * texHeight * 4;
 
-        if (!pixels)
-        {
-            throw std::runtime_error("failed to load texture image!");
-        }
+        ASSERT(pixels, "failed to load texture image!");
 
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -1177,10 +1124,7 @@ namespace lve
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateImage(mDevice, &imageInfo, nullptr, &image) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create image!");
-        }
+        VK_ASSERT(vkCreateImage(mDevice, &imageInfo, nullptr, &image), "vkCreateImage() : failed to create image");
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(mDevice, image, &memRequirements);
@@ -1190,11 +1134,7 @@ namespace lve
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties);
 
-        if (vkAllocateMemory(mDevice, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate image memory!");
-        }
-
+        VK_ASSERT(vkAllocateMemory(mDevice, &allocInfo, nullptr, &imageMemory), "vkAllocateMemory() : failed to allocate memory for image");
         vkBindImageMemory(mDevice, image, imageMemory, 0);
     }
 
@@ -1217,10 +1157,7 @@ namespace lve
         viewInfo.subresourceRange.layerCount = 1;
 
         VkImageView imageView;
-        if (vkCreateImageView(mDevice, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create texture image view!");
-        }
+        VK_ASSERT(vkCreateImageView(mDevice, &viewInfo, nullptr, &imageView), "failed to createImageView()");
 
         return imageView;
     }
@@ -1233,8 +1170,8 @@ namespace lve
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
             barrier.oldLayout = oldLayout;
             barrier.newLayout = newLayout;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED; // for queue family ownership transfer
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED; // for queue family ownership transfer
             barrier.image = image;
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             barrier.subresourceRange.baseMipLevel = 0;
@@ -1250,7 +1187,7 @@ namespace lve
                 barrier.srcAccessMask = 0;
                 barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
-                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT; // no trasnfer before pipeline starts
                 destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             }
             else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
@@ -1263,7 +1200,7 @@ namespace lve
             }
             else
             {
-                throw std::invalid_argument("unsupported layout transition!");
+                ASSERT(false, "unsupported layout transition!");
             }
 
             vkCmdPipelineBarrier(
@@ -1301,10 +1238,7 @@ namespace lve
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = 0.0f;
 
-        if (vkCreateSampler(mDevice, &samplerInfo, nullptr, &mTextureSampler) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create texture sampler!");
-        }
+        VK_ASSERT(vkCreateSampler(mDevice, &samplerInfo, nullptr, &mTextureSampler), "failed to create texture sampler");
     }
 
     void TriangleApp::createDepthResources()
@@ -1340,7 +1274,8 @@ namespace lve
             }
         }
 
-        throw std::runtime_error("failed to find supported format!");
+        VK_ASSERT(false, "failed to find supported format!");
+        return VK_FORMAT_UNDEFINED;
     }
 
     bool TriangleApp::hasStencilComponent(VkFormat format)
@@ -1393,23 +1328,17 @@ namespace lve
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; // Can be submitted to a queue for execution
         allocInfo.commandBufferCount = (uint32_t)mCommandBuffers.size();
 
-        if (vkAllocateCommandBuffers(mDevice, &allocInfo, mCommandBuffers.data()) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate command buffers!");
-        }
+        VK_ASSERT(vkAllocateCommandBuffers(mDevice, &allocInfo, mCommandBuffers.data()), "vkAllocateCommandBuffers() : failed to create command buffers");
     }
 
     void TriangleApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
     {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0; // Optional
+        beginInfo.flags = 0; // Optional.
         beginInfo.pInheritanceInfo = nullptr; // Optional. relavant only for secondary command buffers
 
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to begin recording command buffer!");
-        }
+        VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo), "vkBeginCommandBuffer() : failed to begin command buffer");
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1425,7 +1354,7 @@ namespace lve
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE); // render pass commands will be embedded in the primary command buffer
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE); // inline = primary buffer
         {
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
 
@@ -1446,19 +1375,14 @@ namespace lve
             VkBuffer vertexBuffers[] = { mVertexBuffer };
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-
             vkCmdBindIndexBuffer(commandBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
             vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1, &mDescriptorSets[mCurrentFrame], 0, nullptr);
 
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(mIndices.size()), 1, 0, 0, 0);
         }
         vkCmdEndRenderPass(commandBuffer);
 
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to record command buffer!");
-        }
+        VK_ASSERT(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer() : failed to end command buffer");
     }
 
     void TriangleApp::createSyncObjects()
@@ -1480,7 +1404,7 @@ namespace lve
                 vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphores[i]) != VK_SUCCESS ||
                 vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS)
             {
-                throw std::runtime_error("failed to create synchronization objects for a frame!");
+                ASSERT(false, "failed to create synchronization objects for a frame!");
             }
         }
     }
@@ -1502,21 +1426,17 @@ namespace lve
 
         uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(mDevice, mSwapChain, UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) // can no longer use for rendering
         {
             recreateSwapChain();
             return;
         }
-        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        {
-            throw std::runtime_error("failed to acquire swap chain image!");
-        }
+        ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "failed to acquire swap chain images!");
 
-        vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
+        vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]); // reset fence only when we know we will submit work
 
         vkResetCommandBuffer(mCommandBuffers[mCurrentFrame], 0);
         recordCommandBuffer(mCommandBuffers[mCurrentFrame], imageIndex);
-
         updateUniformBuffer(mCurrentFrame);
 
         VkSubmitInfo submitInfo{};
@@ -1534,10 +1454,8 @@ namespace lve
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFences[mCurrentFrame]) != VK_SUCCESS) // signals fence when safe to reuse command buffer
-        {
-            throw std::runtime_error("failed to submit draw command buffer!");
-        }
+        // signals fence when safe to reuse command buffer
+        VK_ASSERT(vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFences[mCurrentFrame]), "vkQueueSubmit() : failed to submit queue");
 
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -1551,14 +1469,14 @@ namespace lve
         presentInfo.pResults = nullptr; // Optional
 
         result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mbFramebufferResized)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mbFramebufferResized) // SUBOPTIMAL -> can still present (considered success)
         {
             mbFramebufferResized = false;
             recreateSwapChain();
         }
         else if (result != VK_SUCCESS)
         {
-            throw std::runtime_error("failed to present swap chain image!");
+            ASSERT(false, "failed to present swap chain images");
         }
 
         mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -1567,10 +1485,6 @@ namespace lve
     void TriangleApp::cleanup()
     {
         cleanupSwapChain();
-
-        vkDestroyImageView(mDevice, mDepthImageView, nullptr);
-        vkDestroyImage(mDevice, mDepthImage, nullptr);
-        vkFreeMemory(mDevice, mDepthImageMemory, nullptr);
 
         vkDestroySampler(mDevice, mTextureSampler, nullptr);
         vkDestroyImageView(mDevice, mTextureImageView, nullptr);
@@ -1623,6 +1537,10 @@ namespace lve
 
     void TriangleApp::cleanupSwapChain()
     {
+        vkDestroyImageView(mDevice, mDepthImageView, nullptr);
+        vkDestroyImage(mDevice, mDepthImage, nullptr);
+        vkFreeMemory(mDevice, mDepthImageMemory, nullptr);
+
         for (auto framebuffer : mSwapChainFramebuffers)
         {
             vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
