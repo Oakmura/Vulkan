@@ -154,13 +154,14 @@ namespace lve
         void createDescriptorSets();
         void updateUniformBuffer(uint32_t currentImage);
 
-        void createTextureImage();
-        void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-        void createTextureImageView();
-        VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+        void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
         void createImageViews();
-        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
+        void createTextureImage();
+        void createTextureImageView();
         void createTextureSampler();
+        void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
         void createDepthResources();
         VkFormat findDepthFormat();
@@ -223,6 +224,7 @@ namespace lve
         VkDescriptorPool mDescriptorPool;
         std::vector<VkDescriptorSet> mDescriptorSets;
 
+        uint32_t mMipLevels;
         VkImage mTextureImage;
         VkDeviceMemory mTextureImageMemory;
         VkImageView mTextureImageView;
@@ -238,7 +240,6 @@ namespace lve
         VkDeviceMemory mVertexBufferMemory;
         VkBuffer mIndexBuffer;
         VkDeviceMemory mIndexBufferMemory;
-
         std::unordered_map<Vertex, uint32_t> mUniqueVertices;
 
         uint32_t mCurrentFrame = 0;
