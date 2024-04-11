@@ -124,6 +124,7 @@ namespace lve
         bool checkDeviceExtensionSupport(VkPhysicalDevice device);
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
         QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+        VkSampleCountFlagBits getMaxUsableSampleCount();
 
         void createLogicalDevice();
 
@@ -154,13 +155,14 @@ namespace lve
         void createDescriptorSets();
         void updateUniformBuffer(uint32_t currentImage);
 
-        void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
         void createImageViews();
         void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
         void createTextureImage();
         void createTextureImageView();
         void createTextureSampler();
+        void createColorResources(); // MSAA
         void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
         void createDepthResources();
@@ -184,6 +186,7 @@ namespace lve
 
     private:
         enum { WIDTH = 800, HEIGHT = 600 };
+        // enum { WIDTH = 1920, HEIGHT = 1280 };
         enum { MAX_FRAMES_IN_FLIGHT = 2 };
 
         const std::vector<const char*> mRequiredDeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -205,6 +208,10 @@ namespace lve
         std::vector<VkImage> mSwapChainImages;
         std::vector<VkImageView> mSwapChainImageViews;
         std::vector<VkFramebuffer> mSwapChainFramebuffers;
+
+        VkImage mColorImage; // MSAA
+        VkDeviceMemory mColorImageMemory;
+        VkImageView mColorImageView;
 
         VkDescriptorSetLayout mDescriptorSetLayout;
         VkPipelineLayout mPipelineLayout;
@@ -241,6 +248,8 @@ namespace lve
         VkBuffer mIndexBuffer;
         VkDeviceMemory mIndexBufferMemory;
         std::unordered_map<Vertex, uint32_t> mUniqueVertices;
+
+        VkSampleCountFlagBits mMsaaSampleCount = VK_SAMPLE_COUNT_1_BIT; // RTX2070 supports 8 max samples
 
         uint32_t mCurrentFrame = 0;
         bool mbFramebufferResized = false;

@@ -90,6 +90,7 @@ namespace lve
         createGraphicsPipeline();
 
         createCommandPool(); // graphics family pool
+        createColorResources();
         createDepthResources();
 
         createFramebuffers();
@@ -250,6 +251,7 @@ namespace lve
             if (isDeviceSuitable(device))
             {
                 mPhysicalDevice = device;
+                mMsaaSampleCount = getMaxUsableSampleCount();
                 break;
             }
         }
@@ -354,6 +356,44 @@ namespace lve
         }
 
         return indices;
+    }
+
+    VkSampleCountFlagBits TriangleApp::getMaxUsableSampleCount()
+    {
+        VkPhysicalDeviceProperties physicalDeviceProperties;
+        vkGetPhysicalDeviceProperties(mPhysicalDevice, &physicalDeviceProperties);
+
+        VkPhysicalDeviceLimits limits = physicalDeviceProperties.limits;
+        VkSampleCountFlags counts = limits.framebufferColorSampleCounts & limits.framebufferDepthSampleCounts;
+        
+        if (counts & VK_SAMPLE_COUNT_64_BIT)
+        {
+            return VK_SAMPLE_COUNT_64_BIT;
+        }
+        else if (counts & VK_SAMPLE_COUNT_32_BIT)
+        {
+            return VK_SAMPLE_COUNT_32_BIT;
+        }
+        else if (counts & VK_SAMPLE_COUNT_16_BIT)
+        {
+            return VK_SAMPLE_COUNT_16_BIT;
+        }
+        else if (counts & VK_SAMPLE_COUNT_8_BIT)
+        {
+            return VK_SAMPLE_COUNT_8_BIT;
+        }
+        else if (counts & VK_SAMPLE_COUNT_4_BIT)
+        {
+            return VK_SAMPLE_COUNT_4_BIT;
+        }
+        else if (counts & VK_SAMPLE_COUNT_2_BIT)
+        {
+            return VK_SAMPLE_COUNT_2_BIT;
+        }
+        else
+        {
+            return VK_SAMPLE_COUNT_1_BIT;
+        }
     }
 
     void TriangleApp::createLogicalDevice()
@@ -475,6 +515,7 @@ namespace lve
 
         createSwapChain();
         createImageViews();
+        createColorResources();
         createDepthResources();
         createFramebuffers();
     }
@@ -602,7 +643,7 @@ namespace lve
         VkPipelineMultisampleStateCreateInfo multisampling{}; // requires GPU feature enabled
         multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.sampleShadingEnable = VK_FALSE;
-        multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT; // no MSAA
+        multisampling.rasterizationSamples = mMsaaSampleCount;
         multisampling.minSampleShading = 1.0f; // Optional
         multisampling.pSampleMask = nullptr; // Optional
         multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
@@ -707,17 +748,27 @@ namespace lve
     {
         VkAttachmentDescription colorAttachment{};
         colorAttachment.format = mSwapChainImageFormat;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // no MSAA
+        colorAttachment.samples = mMsaaSampleCount;
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // clear before rendering
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // store after rendering to present
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // do not care previous layout
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // changed from VK_IMAGE_LAYOUT_PRESENT_SRC_KHR for MSAA
 
-        VkAttachmentDescription depthAttachment{};
+        VkAttachmentDescription colorAttachmentResolve{};
+        colorAttachmentResolve.format = mSwapChainImageFormat;
+        colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        VkAttachmentDescription depthAttachment{}; // depth does not need extra attachment as it does not present to screen
         depthAttachment.format = findDepthFormat();
-        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        depthAttachment.samples = mMsaaSampleCount;
         depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -729,6 +780,10 @@ namespace lve
         colorAttachmentRef.attachment = 0; // index. should match with layout(location = 0) out vec4 outColor
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+        VkAttachmentReference colorAttachmentResolveRef{};
+        colorAttachmentResolveRef.attachment = 2;
+        colorAttachmentResolveRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
         VkAttachmentReference depthAttachmentRef{};
         depthAttachmentRef.attachment = 1;
         depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -738,6 +793,7 @@ namespace lve
         subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments = &colorAttachmentRef; // index of color attachment referenced by layout (location=0)
+        subpass.pResolveAttachments = &colorAttachmentResolveRef;
         subpass.pDepthStencilAttachment = &depthAttachmentRef; // can only use one depth and stencil attachment
 
         VkSubpassDependency dependency{};
@@ -749,7 +805,7 @@ namespace lve
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT; // memory access types dst use
 
         // renderpasses
-        std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
+        std::array<VkAttachmentDescription, 3> attachments = { colorAttachment, depthAttachment, colorAttachmentResolve };
         VkRenderPassCreateInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -768,10 +824,11 @@ namespace lve
 
         for (size_t i = 0; i < mSwapChainImageViews.size(); ++i)
         {
-            std::array<VkImageView, 2> attachments =
+            std::array<VkImageView, 3> attachments =
             {
-                mSwapChainImageViews[i],
+                mColorImageView,
                 mDepthImageView,
+                mSwapChainImageViews[i],
             };
 
             VkFramebufferCreateInfo framebufferInfo{};
@@ -1097,7 +1154,7 @@ namespace lve
 
         stbi_image_free(pixels);
 
-        createImage(texWidth, texHeight, mMipLevels, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+        createImage(texWidth, texHeight, mMipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mTextureImage, mTextureImageMemory);
 
         transitionImageLayout(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mMipLevels);
@@ -1110,7 +1167,7 @@ namespace lve
         generateMipmaps(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mMipLevels);
     }
 
-    void TriangleApp::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+    void TriangleApp::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
     {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1124,7 +1181,7 @@ namespace lve
         imageInfo.tiling = tiling;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageInfo.usage = usage;
-        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.samples = numSamples;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VK_ASSERT(vkCreateImage(mDevice, &imageInfo, nullptr, &image), "vkCreateImage() : failed to create image");
@@ -1244,6 +1301,15 @@ namespace lve
         VK_ASSERT(vkCreateSampler(mDevice, &samplerInfo, nullptr, &mTextureSampler), "failed to create texture sampler");
     }
 
+    void TriangleApp::createColorResources()
+    {
+        VkFormat colorFormat = mSwapChainImageFormat;
+        
+        createImage(mSwapChainExtent.width, mSwapChainExtent.height, 1, mMsaaSampleCount, colorFormat, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mColorImage, mColorImageMemory);
+        mColorImageView = createImageView(mColorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    }
+
     void TriangleApp::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)
     {
         VkFormatProperties formatProperties;
@@ -1337,7 +1403,7 @@ namespace lve
     {
         VkFormat depthFormat = findDepthFormat();
 
-        createImage(mSwapChainExtent.width, mSwapChainExtent.height, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+        createImage(mSwapChainExtent.width, mSwapChainExtent.height, 1, mMsaaSampleCount, depthFormat, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mDepthImage, mDepthImageMemory);
 
         mDepthImageView = createImageView(mDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
@@ -1629,6 +1695,10 @@ namespace lve
 
     void TriangleApp::cleanupSwapChain()
     {
+        vkDestroyImageView(mDevice, mColorImageView, nullptr);
+        vkDestroyImage(mDevice, mColorImage, nullptr);
+        vkFreeMemory(mDevice, mColorImageMemory, nullptr);
+
         vkDestroyImageView(mDevice, mDepthImageView, nullptr);
         vkDestroyImage(mDevice, mDepthImage, nullptr);
         vkFreeMemory(mDevice, mDepthImageMemory, nullptr);
